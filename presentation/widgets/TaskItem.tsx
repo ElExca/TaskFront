@@ -12,12 +12,26 @@ interface TaskItemProps {
   onPress: () => void;
 }
 
+const decodeUnicode = (str: string) => {
+  return decodeURIComponent(JSON.parse('"' + str.replace(/\"/g, '\\"') + '"'));
+};
+
+const getProgressColor = (progress: number) => {
+  if (progress <= 25) return '#FF0000'; // Rojo
+  if (progress <= 50) return '#FFA500'; // Naranja
+  if (progress <= 75) return '#FFD700'; // Amarillo
+  return '#008000'; // Verde
+};
+
 const TaskItem: React.FC<TaskItemProps> = ({ task, onPress }) => {
+  const decodedTitle = decodeUnicode(task.title);
+  const progressColor = getProgressColor(task.progress);
+
   return (
     <TouchableOpacity onPress={onPress} style={styles.container}>
-      <Text style={styles.title}>{task.title}</Text>
+      <Text style={styles.title}>{decodedTitle}</Text>
       <View style={styles.progressBar}>
-        <View style={[styles.progress, { width: `${task.progress}%` }]} />
+        <View style={[styles.progress, { width: `${task.progress}%`, backgroundColor: progressColor }]} />
       </View>
       <Text style={styles.progressText}>{task.progress}% completado</Text>
     </TouchableOpacity>
@@ -43,7 +57,6 @@ const styles = StyleSheet.create({
   },
   progress: {
     height: 10,
-    backgroundColor: '#2A9D8F',
     borderRadius: 5,
   },
   progressText: {

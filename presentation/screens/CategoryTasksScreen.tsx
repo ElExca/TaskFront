@@ -1,6 +1,6 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import { View, Text, FlatList, StyleSheet, ActivityIndicator } from 'react-native';
-import { useRoute, useNavigation, NavigationProp } from '@react-navigation/native';
+import { useRoute, useNavigation, NavigationProp, useFocusEffect } from '@react-navigation/native';
 import { useTasksCategory } from '@/presentation/providers/TaskProviderCategory';
 import TaskItem from '@/presentation/widgets/TaskItem';
 import Header from '@/presentation/widgets/Header';
@@ -15,17 +15,19 @@ const CategoryTasksScreen: React.FC = () => {
   const { tasks, fetchTasksByCategory, loading } = useTasksCategory();
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
 
-  useEffect(() => {
-    console.log(`Fetching tasks for category: ${category}`);
-    fetchTasksByCategory(category);
-  }, [category]);
+  useFocusEffect(
+    useCallback(() => {
+      console.log(`Fetching tasks for category: ${category}`);
+      fetchTasksByCategory(category);
+    }, [category])
+  );
 
   const handleTaskPress = (taskId: string) => {
     navigation.navigate('taskDetail', { taskId });
   };
 
   useEffect(() => {
-    console.log('Tasks:', tasks);
+    console.log('Tasks:', tasks); 
   }, [tasks]);
 
   return (

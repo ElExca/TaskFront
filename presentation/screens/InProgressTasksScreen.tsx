@@ -1,23 +1,23 @@
-// src/presentation/screens/InProgressTasksScreen.tsx
-
-import React, { useEffect } from 'react';
+import React, { useCallback } from 'react';
 import { View, Text, FlatList, StyleSheet, ActivityIndicator } from 'react-native';
 import { useTasks } from '@/presentation/providers/TaskProviderProgress';
 import TaskItem from '@/presentation/widgets/TaskItem';
 import Header from '@/presentation/widgets/Header';
-import { useNavigation, NavigationProp } from '@react-navigation/native';
+import { useNavigation, NavigationProp, useFocusEffect } from '@react-navigation/native';
 
 type RootStackParamList = {
   taskDetail: { taskId: string };
 };
 
 const InProgressTasksScreen: React.FC = () => {
-  const { tasks, fetchTasksByProgress, loading } = useTasks();
+  const { tasks, fetchTasksByProgress, loading, error } = useTasks();
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
 
-  useEffect(() => {
-    fetchTasksByProgress('en_progreso');
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      fetchTasksByProgress('en_progreso');
+    }, [fetchTasksByProgress])
+  );
 
   const handleTaskPress = (taskId: string) => {
     navigation.navigate('taskDetail', { taskId });
@@ -30,6 +30,10 @@ const InProgressTasksScreen: React.FC = () => {
       {loading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#0000ff" />
+        </View>
+      ) : error ? (
+        <View style={styles.loadingContainer}>
+          <Text style={styles.errorText}>{error}</Text>
         </View>
       ) : (
         <FlatList
@@ -60,6 +64,11 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  errorText: {
+    fontSize: 16,
+    color: 'red',
+    textAlign: 'center',
   },
 });
 

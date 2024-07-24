@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, ActivityIndicator } from 'react-native';
-import { useNavigation, NavigationProp } from '@react-navigation/native';
+import { useNavigation, NavigationProp, useFocusEffect } from '@react-navigation/native';
 import { useTasks } from '../providers/TaskProvider';
 import TaskItem from '../widgets/TaskItem';
 import Header from '../widgets/Header';
@@ -10,8 +10,15 @@ type RootStackParamList = {
 };
 
 const AllTasksScreen: React.FC = () => {
-  const { tasks, loading } = useTasks();
+  const { tasks, fetchTasks, loading } = useTasks();
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
+
+  useFocusEffect(
+    useCallback(() => {
+      console.log('Fetching all tasks');
+      fetchTasks();
+    }, [fetchTasks])
+  );
 
   const handleTaskPress = (taskId: string) => {
     navigation.navigate('taskDetail', { taskId });

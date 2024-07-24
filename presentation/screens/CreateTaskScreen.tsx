@@ -16,10 +16,11 @@ const CreateTaskScreen: React.FC = () => {
   const [isCategoryModalVisible, setCategoryModalVisible] = useState(false);
   const [isNewCategoryModalVisible, setNewCategoryModalVisible] = useState(false);
   const [isMembersModalVisible, setMembersModalVisible] = useState(false);
+  const [isAssigneesModalVisible, setAssigneesModalVisible] = useState(false);
   const [newCategory, setNewCategory] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
-  const [selectedMembers, setSelectedMembers] = useState<{ user_id: string; username: string }[]>([{ user_id: currentUser, username: currentUser }]);
-  const [selectedAssignees, setSelectedAssignees] = useState<{ user_id: string; username: string }[]>([]);
+  const [selectedMembers, setSelectedMembers] = useState<{ user_id: string, username: string }[]>([{ user_id: currentUser, username: currentUser }]);
+  const [selectedAssignees, setSelectedAssignees] = useState<{ user_id: string, username: string }[]>([]);
   const [taskDetails, setTaskDetails] = useState({
     title: '',
     description: '',
@@ -127,6 +128,7 @@ const CreateTaskScreen: React.FC = () => {
   };
 
   const handleCreateTask = async () => {
+    const user_ids = taskDetails.type === 'Asignar' ? selectedAssignees.map(assignee => assignee.user_id) : selectedMembers.map(member => member.user_id);
     const newTaskDetails: any = {
       title: taskDetails.title,
       description: taskDetails.description,
@@ -139,7 +141,7 @@ const CreateTaskScreen: React.FC = () => {
       end_reminder_time: taskDetails.endTime,
       subtasks: taskDetails.subtasks.map(subtask => ({ title: subtask, completed: false })),
       type: taskDetails.type.toLowerCase(),
-      user_ids: taskDetails.type === 'grupal' ? selectedMembers.map(member => member.user_id) : selectedAssignees.map(assignee => assignee.user_id),
+      user_ids,
     };
 
     console.log('Task JSON:', JSON.stringify(newTaskDetails, null, 2));
@@ -304,6 +306,7 @@ const CreateTaskScreen: React.FC = () => {
             onPress={() => setMembersModalVisible(false)}
           >
             <Ionicons name="checkmark" size={24} color="white" />
+            <Text style={styles.addCategoryText}>Guardar</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -313,12 +316,12 @@ const CreateTaskScreen: React.FC = () => {
   const renderAssigneesModal = () => (
     <Modal
       transparent={true}
-      visible={isMembersModalVisible}
-      onRequestClose={() => setMembersModalVisible(false)}
+      visible={isAssigneesModalVisible}
+      onRequestClose={() => setAssigneesModalVisible(false)}
     >
       <View style={styles.modalOverlay}>
         <View style={styles.modalContainer}>
-          <Text style={styles.modalTitle}>Selecciona los integrantes</Text>
+          <Text style={styles.modalTitle}>Selecciona los asignados</Text>
           {usersLoading ? (
             <ActivityIndicator size="large" color="#0000ff" />
           ) : usersError ? (
@@ -345,9 +348,10 @@ const CreateTaskScreen: React.FC = () => {
           )}
           <TouchableOpacity
             style={styles.modalButton}
-            onPress={() => setMembersModalVisible(false)}
+            onPress={() => setAssigneesModalVisible(false)}
           >
             <Ionicons name="checkmark" size={24} color="white" />
+            <Text style={styles.addCategoryText}>Guardar</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -487,14 +491,12 @@ const CreateTaskScreen: React.FC = () => {
               handleInputChange('type', type);
               if (type === 'Grupal') {
                 setSelectedMembers([{ user_id: currentUser, username: currentUser }]);
-                setSelectedAssignees([]);
                 fetchAllUsers(); // Fetch users when "Grupal" is selected
               } else if (type === 'Asignar') {
                 setSelectedMembers([]);
                 fetchAllUsers(); // Fetch users when "Asignar" is selected
               } else {
                 setSelectedMembers([]);
-                setSelectedAssignees([]);
               }
             }}
           >
@@ -515,17 +517,17 @@ const CreateTaskScreen: React.FC = () => {
       {taskDetails.type === 'Asignar' && (
         <TouchableOpacity
           style={styles.input}
-          onPress={() => setMembersModalVisible(true)}
+          onPress={() => setAssigneesModalVisible(true)}
         >
-          <Text style={{ color: '#000' }}>Seleccionar integrantes</Text>
+          <Text style={{ color: '#000' }}>Seleccionar asignados</Text>
         </TouchableOpacity>
       )}
 
       <Text style={styles.label}>Integrantes</Text>
       <View style={styles.selectedItemsContainer}>
-        {(taskDetails.type === 'Grupal' ? selectedMembers : selectedAssignees).map((member, index) => (
+        {(taskDetails.type === 'Grupal' ? selectedMembers : selectedAssignees).map((user, index) => (
           <View key={index} style={styles.selectedItem}>
-            <Text style={styles.selectedItemText}>{member.username}</Text>
+            <Text style={styles.selectedItemText}>{user.username}</Text>
           </View>
         ))}
       </View>

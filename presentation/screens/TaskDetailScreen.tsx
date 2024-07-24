@@ -1,62 +1,95 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Modal, Alert } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Modal, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import Header from '@/presentation/widgets/Header';
+import { useTaskDetail } from '@/presentation/providers/TaskDetailProvider';
+
+type TaskDetailScreenRouteProp = RouteProp<{ params: { taskId: string } }, 'params'>;
 
 const TaskDetailScreen: React.FC = () => {
   const navigation = useNavigation();
-  const [task, setTask] = useState({
-    title: 'Título',
-    description: 'Describe de que trata Describe de que trata Describe de que trata Describe de que trata Describe de que trata',
-    category: 'Salud',
-    priority: 'Baja',
-    type: 'Individual',
-    progress: 50,
-    startDate: '11-12-2024',
-    reminderTime: '07:00 a.m. - 08:00 p.m.',
-    endDate: '12-12-2024 9:30 a.m',
-    subtasks: [
-      { title: 'Subtarea 1', completed: true },
-      { title: 'Subtarea 2', completed: false },
-    ],
-    members: ['Integrante 1', 'Integrante 2', 'Integrante 3'],
-  });
+  const route = useRoute<TaskDetailScreenRouteProp>();
+  const { taskId } = route.params;
+  const { task, loading, error, fetchTaskDetails, updateSubtasks, setTask } = useTaskDetail();
   const [modalVisible, setModalVisible] = useState(false);
+  const [subtaskLoading, setSubtaskLoading] = useState(false);
+
+  useEffect(() => {
+    fetchTaskDetails(taskId);
+  }, [taskId]);
 
   const handleEditPress = () => {
-    // Navegar a la pantalla de edición de tarea
     navigation.navigate('editTask', { task });
   };
 
   const handleDeletePress = () => {
-    // Mostrar la ventana de confirmación
     setModalVisible(true);
   };
 
   const confirmDelete = () => {
-    // Lógica para eliminar la tarea
-    // Aquí puedes añadir la lógica para eliminar la tarea
     setModalVisible(false);
     Alert.alert('Tarea eliminada', 'La tarea ha sido eliminada correctamente.');
-    // Regresar a la pantalla anterior o actualizar la lista de tareas
     navigation.goBack();
   };
 
-  const handleSubtaskToggle = (index: number) => {
+  const handleSubtaskToggle = async (index: number) => {
+    if (!task) return;
     const updatedSubtasks = [...task.subtasks];
     updatedSubtasks[index].completed = !updatedSubtasks[index].completed;
-    setTask({ ...task, subtasks: updatedSubtasks });
+
+    setSubtaskLoading(true);
+    try {
+      await updateSubtasks(taskId, updatedSubtasks);
+      await fetchTaskDetails(taskId);  // Fetch task details again to update the state
+    } catch (error) {
+      Alert.alert('Error', 'No se pudo actualizar la subtarea.');
+    } finally {
+      setSubtaskLoading(false);
+    }
   };
+
+  const getProgressColor = (progress: number) => {
+    if (progress <= 25) return '#FF0000'; // Rojo
+    if (progress <= 50) return '#FFA500'; // Naranja
+    if (progress <= 75) return '#FFD700'; // Amarillo
+    return '#008000'; // Verde
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#2A9D8F" />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.loadingContainer}>
+        <Text style={styles.errorText}>Error: {error}</Text>
+      </View>
+    );
+  }
+
+  if (!task) {
+    return (
+      <View style={styles.loadingContainer}>
+        <Text style={styles.errorText}>No se pudieron cargar los detalles de la tarea.</Text>
+      </View>
+    );
+  }
+
+  const progressColor = getProgressColor(task.progress);
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Header />
       <Text style={styles.title}>{task.title}</Text>
       <View style={styles.progressContainer}>
-        <Text style={styles.type}>{task.type}</Text>
+        <Text style={styles.type}>{task.type.charAt(0).toUpperCase() + task.type.slice(1)}</Text>
         <View style={styles.progressBar}>
-          <View style={[styles.progress, { width: `${task.progress}%` }]} />
+          <View style={[styles.progress, { width: `${task.progress}%`, backgroundColor: progressColor }]} />
         </View>
         <Text style={styles.progressText}>{task.progress}% completado</Text>
       </View>
@@ -69,43 +102,38 @@ const TaskDetailScreen: React.FC = () => {
           </View>
           <View style={styles.rightColumn}>
             <Text style={styles.labelBold}>Prioridad:</Text>
-            <Text style={styles.priority}>{task.priority}</Text>
+            <Text style={styles.priority}>{task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}</Text>
           </View>
         </View>
-        {task.type === 'Grupal' && (
-          <View style={styles.membersContainer}>
-            <Ionicons name="people" size={24} color="black" />
-            <Text style={styles.membersTitle}>Integrantes</Text>
-            {task.members.map((member, index) => (
-              <Text key={index} style={styles.member}>{member}</Text>
-            ))}
-          </View>
-        )}
         <View style={styles.row}>
           <Ionicons name="calendar" size={24} color="black" />
           <Text style={styles.labelBold}>Fecha de inicio de recordatorios:</Text>
         </View>
-        <TextInput style={styles.input} value={task.startDate} editable={false} />
+        <TextInput style={styles.input} value={task.start_reminder_date} editable={false} />
         <View style={styles.row}>
           <Ionicons name="time" size={24} color="black" />
           <Text style={styles.labelBold}>Horario de recordatorios:</Text>
         </View>
-        <TextInput style={styles.input} value={task.reminderTime} editable={false} />
+        <TextInput style={styles.input} value={`${task.start_reminder_time} - ${task.due_time}`} editable={false} />
         <View style={styles.row}>
           <Ionicons name="calendar" size={24} color="black" />
           <Text style={styles.labelBold}>Fecha límite:</Text>
         </View>
-        <TextInput style={styles.input} value={task.endDate} editable={false} />
+        <TextInput style={styles.input} value={task.due_date} editable={false} />
         <View style={styles.subtasksContainer}>
           <Text style={styles.subtasksTitle}>Subtareas</Text>
           {task.subtasks.map((subtask, index) => (
             <View key={index} style={styles.subtask}>
               <TouchableOpacity onPress={() => handleSubtaskToggle(index)}>
-                <Ionicons
-                  name={subtask.completed ? 'checkbox' : 'square-outline'}
-                  size={24}
-                  color={subtask.completed ? 'green' : 'grey'}
-                />
+                {subtaskLoading ? (
+                  <ActivityIndicator size="small" color="#2A9D8F" />
+                ) : (
+                  <Ionicons
+                    name={subtask.completed ? 'checkbox' : 'square-outline'}
+                    size={24}
+                    color={subtask.completed ? 'green' : 'grey'}
+                  />
+                )}
               </TouchableOpacity>
               <Text style={styles.subtaskTitle}>{subtask.title}</Text>
             </View>
@@ -152,6 +180,11 @@ const styles = StyleSheet.create({
     padding: 16,
     backgroundColor: '#F8F8F8',
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
@@ -176,7 +209,6 @@ const styles = StyleSheet.create({
   },
   progress: {
     height: 10,
-    backgroundColor: '#FFD700',
     borderRadius: 5,
   },
   progressText: {
@@ -218,19 +250,6 @@ const styles = StyleSheet.create({
   priority: {
     fontSize: 14,
     color: '#4A4A4A',
-  },
-  membersContainer: {
-    marginBottom: 16,
-  },
-  membersTitle: {
-    fontSize: 16,
-    color: '#4A4A4A',
-    marginBottom: 8,
-  },
-  member: {
-    fontSize: 14,
-    color: '#4A4A4A',
-    marginBottom: 4,
   },
   row: {
     flexDirection: 'row',
@@ -313,6 +332,10 @@ const styles = StyleSheet.create({
   modalButtonText: {
     fontSize: 16,
     color: '#2A9D8F',
+  },
+  errorText: {
+    fontSize: 16,
+    color: 'red',
   },
 });
 
