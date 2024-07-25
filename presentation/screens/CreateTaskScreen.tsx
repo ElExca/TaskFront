@@ -40,6 +40,7 @@ const CreateTaskScreen: React.FC = () => {
   const [currentPickerField, setCurrentPickerField] = useState('');
   const [successModalVisible, setSuccessModalVisible] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [categoryErrorMessage, setCategoryErrorMessage] = useState<string | null>(null);
   const [allUsers, setAllUsers] = useState<any[]>([]);
   const [usersLoading, setUsersLoading] = useState(false);
   const [usersError, setUsersError] = useState<string | null>(null);
@@ -54,22 +55,40 @@ const CreateTaskScreen: React.FC = () => {
 
   const addCategory = async () => {
     if (newCategory.trim()) {
+      if (newCategory.length < 3 || newCategory.length > 25) {
+        setCategoryErrorMessage('El nombre de la categoría debe tener entre 3 y 25 caracteres.');
+        return;
+      }
+
       const jwtToken = await AsyncStorage.getItem('jwtToken');
       if (jwtToken) {
-        await fetch('http://18.211.141.106:5002/', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${jwtToken}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ name: newCategory }),
-        });
-        fetchCategories();
-        setSelectedCategory(newCategory);
-        setNewCategory('');
-        setNewCategoryModalVisible(false);
-        setCategoryModalVisible(false);
+        try {
+          const response = await fetch('http://18.211.141.106:5002/', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${jwtToken}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ name: newCategory }),
+          });
+
+          if (!response.ok) {
+            const data = await response.json();
+            throw new Error(data.message || 'Error al crear la categoría');
+          }
+
+          fetchCategories();
+          setSelectedCategory(newCategory);
+          setNewCategory('');
+          setNewCategoryModalVisible(false);
+          setCategoryModalVisible(false);
+          setCategoryErrorMessage(null);
+        } catch (error) {
+          setCategoryErrorMessage((error as Error).message);
+        }
       }
+    } else {
+      setCategoryErrorMessage('El nombre de la categoría no puede estar vacío.');
     }
   };
 
@@ -129,6 +148,23 @@ const CreateTaskScreen: React.FC = () => {
   };
 
   const handleCreateTask = async () => {
+    if (taskDetails.title.length < 3 || taskDetails.title.length > 50) {
+      setErrorMessage('El título de la tarea debe tener entre 3 y 50 caracteres.');
+      return;
+    }
+
+    if (taskDetails.description.length < 3 || taskDetails.description.length > 500) {
+      setErrorMessage('La descripción de la tarea debe tener entre 3 y 500 caracteres.');
+      return;
+    }
+
+    for (const subtask of taskDetails.subtasks) {
+      if (subtask.length < 3 || subtask.length > 150) {
+        setErrorMessage('Cada subtarea debe tener entre 3 y 150 caracteres.');
+        return;
+      }
+    }
+
     const user_ids = taskDetails.type === 'Asignar' ? selectedAssignees.map(assignee => assignee.user_id) : selectedMembers.map(member => member.user_id);
     const newTaskDetails: any = {
       title: taskDetails.title,
@@ -204,7 +240,6 @@ const CreateTaskScreen: React.FC = () => {
     </Modal>
   );
 
-
   const renderNewCategoryModal = () => (
     <Modal
       transparent={true}
@@ -220,6 +255,7 @@ const CreateTaskScreen: React.FC = () => {
             value={newCategory}
             onChangeText={setNewCategory}
           />
+          {categoryErrorMessage && <Text style={styles.errorText}>{categoryErrorMessage}</Text>}
           <TouchableOpacity style={styles.modalButton} onPress={addCategory}>
             <Ionicons name="checkmark" size={24} color="white" />
           </TouchableOpacity>
@@ -379,6 +415,9 @@ const CreateTaskScreen: React.FC = () => {
         onChangeText={(value) => handleInputChange('title', value)}
         value={taskDetails.title}
       />
+      {taskDetails.title.length > 0 && (taskDetails.title.length < 3 || taskDetails.title.length > 50) && (
+        <Text style={styles.errorText}>El título debe tener entre 3 y 50 caracteres.</Text>
+      )}
 
       <TextInput
         style={styles.input}
@@ -386,6 +425,9 @@ const CreateTaskScreen: React.FC = () => {
         onChangeText={(value) => handleInputChange('description', value)}
         value={taskDetails.description}
       />
+      {taskDetails.description.length > 0 && (taskDetails.description.length < 3 || taskDetails.description.length > 500) && (
+        <Text style={styles.errorText}>La descripción debe tener entre 3 y 500 caracteres.</Text>
+      )}
 
       <TouchableOpacity
         style={styles.input}
@@ -478,6 +520,9 @@ const CreateTaskScreen: React.FC = () => {
           </TouchableOpacity>
         </View>
       ))}
+      {taskDetails.subtasks.some(subtask => subtask.length < 3 || subtask.length > 150) && (
+        <Text style={styles.errorText}>Cada subtarea debe tener entre 3 y 150 caracteres.</Text>
+      )}
       <TouchableOpacity onPress={() => handleInputChange('subtasks', [...taskDetails.subtasks, ''])}>
         <Ionicons name="add" size={24} color="black" />
       </TouchableOpacity>

@@ -46,11 +46,11 @@ export const CategoryProvider: React.FC<CategoryProviderProps> = ({ children }) 
           }));
           setCategories(categoriesData);
         } else {
-          console.error('Error al obtener las categorías');
+         /*  console.error('Error al obtener las categorías'); */
         }
       }
     } catch (error) {
-      console.error('Error al recuperar las categorías', error);
+      /* console.error('Error al recuperar las categorías', error); */
     }
   };
 

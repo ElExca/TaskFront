@@ -17,10 +17,10 @@ const decodeUnicode = (str: string) => {
 };
 
 const getProgressColor = (progress: number) => {
-  if (progress <= 25) return '#FF0000'; // Rojo
-  if (progress <= 50) return '#FFA500'; // Naranja
-  if (progress <= 75) return '#FFD700'; // Amarillo
-  return '#008000'; // Verde
+  if (progress <= 25) return '#F26158'; // Rojo
+  if (progress <= 50) return '#F2A05D'; // Naranja
+  if (progress <= 75) return '#F4EB70'; // Amarillo
+  return '#A7D3A6'; // Verde
 };
 
 const TaskItem: React.FC<TaskItemProps> = ({ task, onPress }) => {

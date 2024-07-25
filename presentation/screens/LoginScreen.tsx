@@ -2,13 +2,15 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, StyleSheet, Image, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
+import { usePreventScreenCapture } from 'expo-screen-capture';
 
 const LoginScreen: React.FC = () => {
+  usePreventScreenCapture();
+
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  
 
   const handleLogin = async () => {
     if (!identifier || !password) {
@@ -65,6 +67,8 @@ const LoginScreen: React.FC = () => {
           placeholder="email@ejemplo.com o nombre de usuario"
           value={identifier}
           onChangeText={setIdentifier}
+          autoComplete="username"
+          textContentType="username"
         />
         <Text>Contraseña</Text>
         <TextInput
@@ -73,6 +77,8 @@ const LoginScreen: React.FC = () => {
           secureTextEntry
           value={password}
           onChangeText={setPassword}
+          autoComplete="password"
+          textContentType="password"
         />
 
         {loading ? (
@@ -82,7 +88,7 @@ const LoginScreen: React.FC = () => {
             <Text style={styles.buttonText}>INICIAR SESIÓN</Text>
           </TouchableOpacity>
         )}
-        
+
         <TouchableOpacity onPress={() => router.push('/register')} style={styles.registerLink}>
           <Text>¿No tienes una cuenta? <Text style={styles.registerLinkText}>Regístrate</Text></Text>
         </TouchableOpacity>

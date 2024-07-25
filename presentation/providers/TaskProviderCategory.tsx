@@ -47,11 +47,11 @@ export const TaskProviderCategory: React.FC<TaskProviderProps> = ({ children }) 
 
           setTasks(sanitizedTasks);
         } else {
-          console.error('Error al obtener las tareas por categoría');
+          /* console.error('Error al obtener las tareas por categoría'); */
         }
       }
     } catch (error) {
-      console.error('Error al recuperar las tareas por categoría', error);
+      /* console.error('Error al recuperar las tareas por categoría', error); */
     } finally {
       setLoading(false);
     }

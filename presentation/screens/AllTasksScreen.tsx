@@ -30,7 +30,7 @@ const AllTasksScreen: React.FC = () => {
       <Text style={styles.title}>Todas las Tareas</Text>
       {loading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#0000ff" />
+          <ActivityIndicator size="large" color="#2A9D8F" />
         </View>
       ) : (
         <FlatList

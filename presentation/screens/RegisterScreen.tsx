@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, Button, Image, TouchableOpacity } from 'react-native';
+import { View, Text, TextInput, StyleSheet, Button, Image, TouchableOpacity, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
+import * as ScreenCapture from 'expo-screen-capture';
 
 const RegisterScreen: React.FC = () => {
   const [name, setName] = useState('');
@@ -9,13 +10,75 @@ const RegisterScreen: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const router = useRouter();
 
-  const handleRegister = () => {
-    // Manejar el registro del usuario
-    console.log({ name, email, password, confirmPassword });
+  React.useEffect(() => {
+    const preventScreenCapture = async () => {
+      await ScreenCapture.preventScreenCaptureAsync();
+    };
+    preventScreenCapture();
+
+    return () => {
+      ScreenCapture.allowScreenCaptureAsync();
+    };
+  }, []);
+
+  const validateEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const validatePassword = (password: string) => {
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    return passwordRegex.test(password);
+  };
+
+  const handleRegister = async () => {
+    if (name.length < 3 || name.length > 20) {
+      Alert.alert('Error', 'El nombre de usuario debe tener entre 3 y 20 caracteres.');
+      return;
+    }
+
+    if (!validateEmail(email)) {
+      Alert.alert('Error', 'El correo electrónico no es válido.');
+      return;
+    }
+
+    if (!validatePassword(password)) {
+      Alert.alert('Error', 'La contraseña debe tener al menos 8 caracteres, incluyendo una letra mayúscula, una letra minúscula, un número y un carácter especial.');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      Alert.alert('Error', 'Las contraseñas no coinciden.');
+      return;
+    }
+
+    try {
+      const response = await fetch('http://18.211.141.106:5001', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username: name,
+          email,
+          password,
+        }),
+      });
+
+      if (response.ok) {
+        Alert.alert('Éxito', 'Cuenta creada exitosamente.');
+        router.push('/login');
+      } else {
+        const errorData = await response.json();
+        Alert.alert('Error', errorData.message || 'Algo salió mal, por favor intenta de nuevo.');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'No se pudo conectar con el servidor. Por favor, intenta de nuevo.');
+    }
   };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <Image
         source={require('@/assets/images/logo.png')} // Asegúrate de tener esta imagen en tu carpeta de assets
         style={styles.logo}
@@ -64,7 +127,7 @@ const RegisterScreen: React.FC = () => {
           <Text>¿Ya tienes una cuenta? <Text style={styles.loginLinkText}>Inicia sesión</Text></Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 };
 

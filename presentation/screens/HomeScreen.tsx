@@ -1,15 +1,17 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
-import { useNavigation, NavigationProp } from '@react-navigation/native';
+import { useNavigation, NavigationProp, useFocusEffect } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 import { useTasks as useTasksProgress } from '@/presentation/providers/TaskProviderProgress';
 import { useCategories } from '@/presentation/providers/CategoryProvider';
+import { useTaskSummary } from '@/presentation/providers/TaskSummaryProvider';
 import Header from '@/presentation/widgets/Header';
 import ProgressBar from '@/presentation/widgets/ProgressBar';
 import CategoryButton from '@/presentation/widgets/CategoryButton';
 import PerformanceChart from '@/presentation/widgets/PerformanceChart';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
-import { useTaskSummary } from '@/presentation/providers/TaskSummaryProvider';
 
 type RootStackParamList = {
   login: undefined;
@@ -32,19 +34,39 @@ const HomeScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const opacity = useSharedValue(0);
   const translateY = useSharedValue(20);
+  const [username, setUsername] = useState<string | null>(null);
+
+  const getUsername = async () => {
+    const storedUsername = await AsyncStorage.getItem('username');
+    if (storedUsername) {
+      setUsername(capitalizeWords(storedUsername));
+    }
+  };
 
   useEffect(() => {
-    opacity.value = withTiming(1, { duration: 500 });
-    translateY.value = withTiming(0, { duration: 500 });
-    fetchCategories();
-    fetchTasksByProgress('all'); // Assumes you have a way to fetch all tasks
-    fetchTaskSummary();
-  }, [opacity, translateY]);
+    getUsername();
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      opacity.value = withTiming(1, { duration: 500 });
+      translateY.value = withTiming(0, { duration: 500 });
+      fetchCategories();
+      fetchTasksByProgress('all'); // Assumes you have a way to fetch all tasks
+      fetchTaskSummary();
+    }, [opacity, translateY])
+  );
+
+  const capitalizeWords = (str: string) => {
+    return str.replace(/\b\w/g, char => char.toUpperCase());
+  };
 
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,
     transform: [{ translateY: translateY.value }],
   }));
+
+  const noTasksColor = '#E0E0E0';
 
   if (tasksLoading || summaryLoading) {
     return (
@@ -82,13 +104,17 @@ const HomeScreen: React.FC = () => {
     navigation.navigate('notStartedTasks');
   };
 
+  const getProgressColor = (totalTasks: number, color: string) => {
+    return totalTasks > 0 ? color : noTasksColor;
+  };
+
   return (
     <View style={styles.container}>
       <Header />
       <ScrollView>
         <Animated.View style={[styles.welcomeContainer, animatedStyle]}>
           <Text style={styles.greeting}>Hola, de nuevo</Text>
-          <Text style={styles.username}>Paola Penagos</Text>
+          <Text style={styles.username}>{username}</Text>
         </Animated.View>
         <Animated.View style={[styles.newTaskButtonContainer, animatedStyle]}>
           <TouchableOpacity style={styles.newTaskButton} onPress={handleCreateTaskPress}>
@@ -98,21 +124,30 @@ const HomeScreen: React.FC = () => {
         </Animated.View>
         <Animated.View style={[styles.section, animatedStyle]}>
           <Text style={styles.sectionTitle}>Felicidades!!!</Text>
-          <ProgressBar progress={((taskSummary?.total_completada ?? 0) / (taskSummary?.total_tasks ?? 1)) * 100} color="#6BCB77" />
+          <ProgressBar 
+            progress={((taskSummary?.total_completada ?? 0) / (taskSummary?.total_tasks ?? 1)) * 100} 
+            color={getProgressColor(taskSummary?.total_tasks ?? 0, "#A7D3A6")} 
+          />
           <TouchableOpacity onPress={handleViewCompletedTasksPress}>
             <Text style={styles.sectionSubtitle}>Ver tareas completadas</Text>
           </TouchableOpacity>
         </Animated.View>
         <Animated.View style={[styles.section, animatedStyle]}>
           <Text style={styles.sectionTitle}>Te falta poco</Text>
-          <ProgressBar progress={((taskSummary?.total_en_progreso ?? 0) / (taskSummary?.total_tasks ?? 1)) * 100} color="#FFD700" />
+          <ProgressBar 
+            progress={((taskSummary?.total_en_progreso ?? 0) / (taskSummary?.total_tasks ?? 1)) * 100} 
+            color={getProgressColor(taskSummary?.total_tasks ?? 0, "#F4EB70")} 
+          />
           <TouchableOpacity onPress={handleViewInProgressTasksPress}>
             <Text style={styles.sectionSubtitle}>Ver tareas en proceso</Text>
           </TouchableOpacity>
         </Animated.View>
         <Animated.View style={[styles.section, animatedStyle]}>
           <Text style={styles.sectionTitle}>No te olvides!</Text>
-          <ProgressBar progress={((taskSummary?.total_sin_iniciar ?? 0) / (taskSummary?.total_tasks ?? 1)) * 100} color="#FF6B6B" />
+          <ProgressBar 
+            progress={((taskSummary?.total_sin_iniciar ?? 0) / (taskSummary?.total_tasks ?? 1)) * 100} 
+            color={getProgressColor(taskSummary?.total_tasks ?? 0, "#F26158")} 
+          />
           <TouchableOpacity onPress={handleViewNotStartedTasksPress}>
             <Text style={styles.sectionSubtitle}>Ver tareas sin iniciar</Text>
           </TouchableOpacity>
@@ -120,13 +155,12 @@ const HomeScreen: React.FC = () => {
         <Animated.View style={[styles.section, animatedStyle]}>
           <Text style={styles.sectionTitle}>Ver tareas de:</Text>
           <View style={styles.categoryContainer}>
-            {categories.map((item) => (
+            {taskSummary?.categories.map((item) => (
               <CategoryButton
-                key={item._id}
-                category={item.name}
-                taskCount={item.taskCount}
-                color={item.color}
-                onPress={() => handleCategoryPress(item.name)}
+                key={item.category}
+                category={item.category}
+                taskCount={item.total_tasks}
+                onPress={() => handleCategoryPress(item.category)}
               />
             ))}
           </View>
@@ -137,6 +171,8 @@ const HomeScreen: React.FC = () => {
             inProgress={taskSummary?.total_en_progreso || 0}
             notStarted={taskSummary?.total_sin_iniciar || 0}
             totalTasks={taskSummary?.total_tasks || 0}
+            completionRate={taskSummary?.predicted_completion_rate || 0}
+            trend={taskSummary?.trend || 'neutral'}
           />
           <TouchableOpacity onPress={() => navigation.navigate('alltasks')}>
             <Text style={styles.viewAllTasksText}>Ver todas mis tareas</Text>

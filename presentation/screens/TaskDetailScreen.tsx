@@ -55,10 +55,10 @@ const TaskDetailScreen: React.FC = () => {
   };
 
   const getProgressColor = (progress: number) => {
-    if (progress <= 25) return '#FF0000'; 
-    if (progress <= 50) return '#FFA500'; 
-    if (progress <= 75) return '#FFD700'; 
-    return '#008000'; 
+    if (progress <= 25) return '#F26158'; // Rojo
+    if (progress <= 50) return '#F2A05D'; // Naranja
+    if (progress <= 75) return '#F4EB70'; // Amarillo
+    return '#A7D3A6'; 
   };
 
   if (loading) {

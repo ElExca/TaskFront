@@ -2,15 +2,21 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
 
+// Lista de colores
+const colors = ['#BAD7F2', '#BADEF0' , '#BAE5EE' , '#B0F2B4' , '#EE7DB2' , '#F4EB70' , '#B5F2CF' , '#FF9770' , '#FF848B' , '#FF7A99' , '#FF70A6' , '#DC8ABD' , '#B8A3D3' , '#94BDE9' , '#70D6FF' , '#F2CEC2' , '#F2D8BE' , '#F2CEC2' ];
+
 interface CategoryButtonProps {
   category: string;
   taskCount: number;
-  color: string;
   onPress: () => void;
 }
 
-const CategoryButton: React.FC<CategoryButtonProps> = ({ category, taskCount, color, onPress }) => {
+// Función para obtener un color aleatorio de la lista
+const getRandomColor = () => colors[Math.floor(Math.random() * colors.length)];
+
+const CategoryButton: React.FC<CategoryButtonProps> = ({ category, taskCount, onPress }) => {
   const opacity = useSharedValue(0);
+  const color = getRandomColor(); // Obtener color aleatorio
 
   React.useEffect(() => {
     opacity.value = withTiming(1, { duration: 1000 });
@@ -24,7 +30,7 @@ const CategoryButton: React.FC<CategoryButtonProps> = ({ category, taskCount, co
     <Animated.View style={[styles.container, { backgroundColor: color }, animatedStyle]}>
       <TouchableOpacity onPress={onPress} style={styles.button}>
         <Text style={styles.categoryText}>{category}</Text>
-        <Text style={styles.taskCountText}>{taskCount} 5 tareas</Text>
+        <Text style={styles.taskCountText}>{taskCount} tareas</Text>
       </TouchableOpacity>
     </Animated.View>
   );

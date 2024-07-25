@@ -1,16 +1,29 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, FlatList } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, FlatList, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, NavigationProp } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+
+interface Notification {
+  _id: string;
+  message: string;
+  task_id: string;
+  user_id: string;
+}
+
+type RootStackParamList = {
+  taskDetail: { taskId: string };
+};
 
 const Header: React.FC = () => {
   const [menuVisible, setMenuVisible] = useState(false);
   const [notificationsVisible, setNotificationsVisible] = useState(false);
-  const [notifications, setNotifications] = useState([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalMessage, setModalMessage] = useState('');
   const translateY = useSharedValue(-50);
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
 
   useEffect(() => {
     translateY.value = withTiming(0, { duration: 500 });
@@ -30,7 +43,7 @@ const Header: React.FC = () => {
       try {
         const jwtToken = await AsyncStorage.getItem('jwtToken');
         if (jwtToken) {
-          const response = await fetch('https://your-backend-url.com/notifications', {
+          const response = await fetch('http://18.211.141.106:5003/notifications', {
             method: 'GET',
             headers: {
               'Authorization': `Bearer ${jwtToken}`,
@@ -39,23 +52,74 @@ const Header: React.FC = () => {
 
           if (response.ok) {
             const data = await response.json();
-            setNotifications(data.notifications); // Asegúrate de que data.notifications contiene id y text
+            console.log('Received notifications:', data);
+            if (Array.isArray(data)) {
+              setNotifications(data);
+            } else {
+              console.error('Unexpected data format:', data);
+              setNotifications([]);
+            }
           } else {
             console.error('Error al obtener notificaciones');
+            setNotifications([]);
           }
         }
       } catch (error) {
         console.error('Error al recuperar el token', error);
+        setNotifications([]);
       }
     }
   };
 
-  const renderNotificationItem = ({ item }: { item: any }) => (
-    <View key={item.id} style={styles.notificationItem}>
-      <Text style={styles.notificationText}>{item.text}</Text>
-      <TouchableOpacity onPress={() => navigation.navigate('TaskDetail', { id: item.id })}>
-        <Text style={styles.detailsText}>Ver detalles</Text>
-      </TouchableOpacity>
+  const handleTaskPress = async (taskId: string) => {
+    console.log('Navigating to taskDetail with taskId:', taskId);
+    try {
+      const jwtToken = await AsyncStorage.getItem('jwtToken');
+      if (jwtToken) {
+        const response = await fetch(`http://18.211.141.106:5003/task/${taskId}`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${jwtToken}`,
+          },
+        });
+
+        console.log('Task fetch response status:', response.status);
+
+        if (response.ok) {
+          const taskData = await response.json();
+          console.log('Task data:', taskData);
+
+          if (taskData && Object.keys(taskData).length > 0) {
+            navigation.navigate('taskDetail', { taskId });
+          } else {
+            setModalMessage('La tarea no existe.');
+            setModalVisible(true);
+          }
+        } else {
+          setModalMessage('La tarea no existe.');
+          setModalVisible(true);
+        }
+      }
+    } catch (error) {
+      console.error('Error al verificar la tarea', error);
+      setModalMessage('Error al verificar la tarea.');
+      setModalVisible(true);
+    }
+  };
+
+  const renderNotificationItem = ({ item }: { item: Notification }) => (
+    <View key={item._id} style={styles.notificationItem}>
+      <Text style={styles.notificationText}>{item.message}</Text>
+      <View style={styles.detailsContainer}>
+        <View style={styles.progressBarContainer}>
+          <View style={styles.progressBar}></View>
+        </View>
+        {item.task_id !== "0000000" && (
+          <TouchableOpacity onPress={() => handleTaskPress(item.task_id)}>
+            <Text style={styles.detailsText}>Ver detalles</Text>
+          </TouchableOpacity>
+        )}
+      </View>
     </View>
   );
 
@@ -86,11 +150,29 @@ const Header: React.FC = () => {
           <Text style={styles.notificationsTitle}>Recordatorios</Text>
           <FlatList
             data={notifications}
-            keyExtractor={(item) => item.id.toString()}
+            keyExtractor={(item) => item._id}
             renderItem={renderNotificationItem}
+            ListEmptyComponent={<Text>No hay notificaciones</Text>}
           />
         </View>
       )}
+      <Modal
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalText}>{modalMessage}</Text>
+            <TouchableOpacity
+              style={styles.modalButton}
+              onPress={() => setModalVisible(false)}
+            >
+              <Text style={styles.modalButtonText}>Cerrar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -148,9 +230,6 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   notificationItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
     paddingVertical: 8,
     borderBottomWidth: 1,
     borderBottomColor: '#DDD',
@@ -158,10 +237,59 @@ const styles = StyleSheet.create({
   notificationText: {
     fontSize: 14,
     color: '#4A4A4A',
+    marginBottom: 4,
+  },
+  detailsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  progressBarContainer: {
+    flex: 1,
+    height: 6,
+    backgroundColor: '#EEE',
+    borderRadius: 3,
+    overflow: 'hidden',
+    marginRight: 8,
+  },
+  progressBar: {
+    height: '100%',
+    width: '60%', // Ejemplo, ajusta esto según el progreso real
+    backgroundColor: '#F4EB70', // Cambia el color según el estado de la tarea
   },
   detailsText: {
     fontSize: 14,
     color: '#2A9D8F',
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  modalContainer: {
+    backgroundColor: 'white',
+    padding: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    width: 300,
+  },
+  modalText: {
+    fontSize: 16,
+    color: '#4A4A4A',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  modalButton: {
+    backgroundColor: '#2A9D8F',
+    padding: 8,
+    borderRadius: 8,
+    alignItems: 'center',
+    width: '100%',
+  },
+  modalButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
   },
 });
 
