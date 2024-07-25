@@ -9,6 +9,7 @@ import CategoryButton from '@/presentation/widgets/CategoryButton';
 import PerformanceChart from '@/presentation/widgets/PerformanceChart';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
+import { useTaskSummary } from '@/presentation/providers/TaskSummaryProvider';
 
 type RootStackParamList = {
   login: undefined;
@@ -25,8 +26,9 @@ type RootStackParamList = {
 };
 
 const HomeScreen: React.FC = () => {
-  const { tasks, loading, fetchTasksByProgress } = useTasksProgress();
+  const { tasks, loading: tasksLoading, fetchTasksByProgress } = useTasksProgress();
   const { categories, fetchCategories } = useCategories();
+  const { taskSummary, loading: summaryLoading, error, fetchTaskSummary } = useTaskSummary();
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const opacity = useSharedValue(0);
   const translateY = useSharedValue(20);
@@ -36,6 +38,7 @@ const HomeScreen: React.FC = () => {
     translateY.value = withTiming(0, { duration: 500 });
     fetchCategories();
     fetchTasksByProgress('all'); // Assumes you have a way to fetch all tasks
+    fetchTaskSummary();
   }, [opacity, translateY]);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -43,10 +46,21 @@ const HomeScreen: React.FC = () => {
     transform: [{ translateY: translateY.value }],
   }));
 
-  // Progreso de tareas ajustado a 100%, 50% y 5%
-  const completedProgress = 60;
-  const inProgressProgress = 50;
-  const notStartedProgress = 5;
+  if (tasksLoading || summaryLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#2A9D8F" />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>{error}</Text>
+      </View>
+    );
+  }
 
   const handleCategoryPress = (category: string) => {
     navigation.navigate('categoryTasks', { category });
@@ -54,10 +68,6 @@ const HomeScreen: React.FC = () => {
 
   const handleCreateTaskPress = () => {
     navigation.navigate('createtask');
-  };
-
-  const handleTaskDetailPress = () => {
-    navigation.navigate('taskDetail');
   };
 
   const handleViewCompletedTasksPress = () => {
@@ -71,14 +81,6 @@ const HomeScreen: React.FC = () => {
   const handleViewNotStartedTasksPress = () => {
     navigation.navigate('notStartedTasks');
   };
-
-  if (loading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#2A9D8F" />
-      </View>
-    );
-  }
 
   return (
     <View style={styles.container}>
@@ -96,21 +98,21 @@ const HomeScreen: React.FC = () => {
         </Animated.View>
         <Animated.View style={[styles.section, animatedStyle]}>
           <Text style={styles.sectionTitle}>Felicidades!!!</Text>
-          <ProgressBar progress={completedProgress} color="#6BCB77" />
+          <ProgressBar progress={((taskSummary?.total_completada ?? 0) / (taskSummary?.total_tasks ?? 1)) * 100} color="#6BCB77" />
           <TouchableOpacity onPress={handleViewCompletedTasksPress}>
             <Text style={styles.sectionSubtitle}>Ver tareas completadas</Text>
           </TouchableOpacity>
         </Animated.View>
         <Animated.View style={[styles.section, animatedStyle]}>
           <Text style={styles.sectionTitle}>Te falta poco</Text>
-          <ProgressBar progress={inProgressProgress} color="#FFD700" />
+          <ProgressBar progress={((taskSummary?.total_en_progreso ?? 0) / (taskSummary?.total_tasks ?? 1)) * 100} color="#FFD700" />
           <TouchableOpacity onPress={handleViewInProgressTasksPress}>
             <Text style={styles.sectionSubtitle}>Ver tareas en proceso</Text>
           </TouchableOpacity>
         </Animated.View>
         <Animated.View style={[styles.section, animatedStyle]}>
           <Text style={styles.sectionTitle}>No te olvides!</Text>
-          <ProgressBar progress={notStartedProgress} color="#FF6B6B" />
+          <ProgressBar progress={((taskSummary?.total_sin_iniciar ?? 0) / (taskSummary?.total_tasks ?? 1)) * 100} color="#FF6B6B" />
           <TouchableOpacity onPress={handleViewNotStartedTasksPress}>
             <Text style={styles.sectionSubtitle}>Ver tareas sin iniciar</Text>
           </TouchableOpacity>
@@ -131,9 +133,10 @@ const HomeScreen: React.FC = () => {
         </Animated.View>
         <Animated.View style={[styles.section, animatedStyle]}>
           <PerformanceChart
-            completed={completedProgress}
-            inProgress={inProgressProgress}
-            notStarted={notStartedProgress}
+            completed={taskSummary?.total_completada || 0}
+            inProgress={taskSummary?.total_en_progreso || 0}
+            notStarted={taskSummary?.total_sin_iniciar || 0}
+            totalTasks={taskSummary?.total_tasks || 0}
           />
           <TouchableOpacity onPress={() => navigation.navigate('alltasks')}>
             <Text style={styles.viewAllTasksText}>Ver todas mis tareas</Text>
@@ -154,6 +157,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#F8F8F8',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F8F8F8',
+  },
+  errorText: {
+    color: 'red',
+    fontSize: 18,
+    textAlign: 'center',
   },
   welcomeContainer: {
     paddingHorizontal: 16,
