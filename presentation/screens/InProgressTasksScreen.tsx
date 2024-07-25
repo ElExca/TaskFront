@@ -29,7 +29,7 @@ const InProgressTasksScreen: React.FC = () => {
       <Text style={styles.title}>Tareas en Proceso</Text>
       {loading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#0000ff" />
+          <ActivityIndicator size="large" color="#2A9D8F" />
         </View>
       ) : error ? (
         <View style={styles.loadingContainer}>

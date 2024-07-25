@@ -32,6 +32,10 @@ interface TaskDetailProviderProps {
   children: ReactNode;
 }
 
+const sanitizeText = (text: string) => {
+  return text.replace(/['"]/g, ''); // Remueve comillas simples y dobles
+};
+
 export const TaskDetailProvider: React.FC<TaskDetailProviderProps> = ({ children }) => {
   const [task, setTask] = useState<Task | null>(null);
   const [loading, setLoading] = useState(false);
@@ -64,7 +68,18 @@ export const TaskDetailProvider: React.FC<TaskDetailProviderProps> = ({ children
         }) : value
       );
 
-      setTask(decodedData);
+      // Sanitiza los campos relevantes
+      const sanitizedTask = {
+        ...decodedData,
+        title: sanitizeText(decodedData.title),
+        description: sanitizeText(decodedData.description),
+        subtasks: decodedData.subtasks.map((subtask: { title: string; completed: boolean }) => ({
+          ...subtask,
+          title: sanitizeText(subtask.title),
+        })),
+      };
+
+      setTask(sanitizedTask);
     } catch (error) {
       setError((error as Error).message);
     } finally {

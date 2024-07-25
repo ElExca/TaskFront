@@ -20,6 +20,10 @@ interface TaskProviderProps {
   children: ReactNode;
 }
 
+const sanitizeText = (text: string) => {
+  return text.replace(/['"]/g, ''); // Remueve comillas simples y dobles
+};
+
 export const TaskProvider: React.FC<TaskProviderProps> = ({ children }) => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(false);
@@ -45,7 +49,13 @@ export const TaskProvider: React.FC<TaskProviderProps> = ({ children }) => {
         throw new Error(data.message || 'Failed to fetch tasks');
       }
 
-      setTasks(data);
+      // Sanitizar los títulos de las tareas
+      const sanitizedTasks = data.map((task: Task) => ({
+        ...task,
+        title: sanitizeText(task.title),
+      }));
+
+      setTasks(sanitizedTasks);
     } catch (error) {
       setError((error as Error).message);
     } finally {

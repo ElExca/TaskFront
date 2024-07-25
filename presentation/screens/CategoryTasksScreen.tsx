@@ -36,7 +36,7 @@ const CategoryTasksScreen: React.FC = () => {
       <Text style={styles.title}>Tareas de {category}</Text>
       {loading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#0000ff" />
+          <ActivityIndicator size="large" color="#2A9D8F" />
         </View>
       ) : (
         <FlatList

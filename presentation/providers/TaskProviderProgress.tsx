@@ -6,6 +6,7 @@ interface Task {
   progress: number;
   title: string;
   status: string;
+  description?: string; // Agrega esto si también quieres sanitizar la descripción
 }
 
 interface TaskProviderProps {
@@ -20,6 +21,10 @@ interface TaskContextProps {
 }
 
 const TaskContext = createContext<TaskContextProps | undefined>(undefined);
+
+const sanitizeText = (text: string) => {
+  return text.replace(/['"]/g, ''); // Remueve comillas simples y dobles
+};
 
 export const TaskProviderProgress: React.FC<TaskProviderProps> = ({ children }) => {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -42,7 +47,13 @@ export const TaskProviderProgress: React.FC<TaskProviderProps> = ({ children }) 
 
         if (response.ok) {
           const data = await response.json();
-          setTasks(data);
+          // Sanitiza los datos recibidos
+          const sanitizedTasks = data.map((task: Task) => ({
+            ...task,
+            title: sanitizeText(task.title),
+            description: task.description ? sanitizeText(task.description) : undefined, // Sanitiza la descripción si existe
+          }));
+          setTasks(sanitizedTasks);
         } else {
           setError('Error al recuperar las tareas');
         }

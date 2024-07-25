@@ -36,6 +36,22 @@ interface EditTaskProviderProps {
   children: ReactNode;
 }
 
+// Función para decodificar caracteres de escape Unicode
+const decodeUnicode = (data: any) => {
+  return JSON.parse(JSON.stringify(data), (key, value) =>
+    typeof value === 'string'
+      ? value.replace(/\\u[\dA-F]{4}/gi, match => {
+          return String.fromCharCode(parseInt(match.replace(/\\u/g, ''), 16));
+        })
+      : value
+  );
+};
+
+// Función para sanitizar texto
+const sanitizeText = (text: string) => {
+  return text.replace(/['"]/g, ''); // Remueve comillas simples y dobles
+};
+
 export const EditTaskProvider: React.FC<EditTaskProviderProps> = ({ children }) => {
   const [task, setTask] = useState<Task | null>(null);
   const [loading, setLoading] = useState(false);
@@ -46,7 +62,7 @@ export const EditTaskProvider: React.FC<EditTaskProviderProps> = ({ children }) 
     setError(null);
 
     try {
-      console.log('Fetching task details for ID:', taskId); // Imprimir el ID de la tarea que se está buscando
+      console.log('Fetching task details for ID:', taskId);
 
       const jwtToken = await AsyncStorage.getItem('jwtToken');
       const response = await fetch(`http://18.211.141.106:5003/task/${taskId}`, {
@@ -58,15 +74,29 @@ export const EditTaskProvider: React.FC<EditTaskProviderProps> = ({ children }) 
       });
 
       const data = await response.json();
-      
-      console.log('Response Status:', response.status); // Imprimir el estado de la respuesta
-      console.log('Response Data:', data); // Imprimir el JSON recibido
+
+      console.log('Response Status:', response.status);
+      console.log('Response Data:', data);
 
       if (!response.ok) {
         throw new Error(data.message || 'Failed to fetch task details');
       }
 
-      setTask(data);
+      // Decodificar caracteres de escape Unicode
+      const decodedData = decodeUnicode(data);
+
+      // Sanitiza los campos relevantes
+      const sanitizedTask = {
+        ...decodedData,
+        title: sanitizeText(decodedData.title),
+        description: sanitizeText(decodedData.description),
+        subtasks: decodedData.subtasks.map((subtask: Subtask) => ({
+          ...subtask,
+          title: sanitizeText(subtask.title),
+        })),
+      };
+
+      setTask(sanitizedTask);
     } catch (error) {
       setError((error as Error).message);
     } finally {
@@ -80,25 +110,41 @@ export const EditTaskProvider: React.FC<EditTaskProviderProps> = ({ children }) 
 
     try {
       const jwtToken = await AsyncStorage.getItem('jwtToken');
+
+      // Sanitizar los datos de la tarea antes de enviarlos
+      const sanitizedTaskData = {
+        ...taskData,
+        title: sanitizeText(taskData.title),
+        description: sanitizeText(taskData.description),
+        subtasks: taskData.subtasks.map((subtask) => ({
+          ...subtask,
+          title: sanitizeText(subtask.title),
+        })),
+      };
+
+      console.log('Sending updated task data:', sanitizedTaskData);
+
       const response = await fetch(`http://18.211.141.106:5003/${taskId}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${jwtToken}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(taskData),
+        body: JSON.stringify(sanitizedTaskData),
       });
 
       if (!response.ok) {
         const data = await response.json();
+        console.log('Update failed with response:', data);
         throw new Error(data.message || 'Failed to update task');
       }
 
-      console.log('Updated Task Data:', taskData); // Imprimir los datos enviados
+      console.log('Updated Task Data:', sanitizedTaskData);
 
-      // Update the task details after updating the task
+      // Actualizar los detalles de la tarea después de actualizarla
       await fetchTaskDetails(taskId);
     } catch (error) {
+      console.log('Update task error:', (error as Error).message);
       setError((error as Error).message);
     } finally {
       setLoading(false);

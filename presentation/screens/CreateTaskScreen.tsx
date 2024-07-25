@@ -86,14 +86,15 @@ const CreateTaskScreen: React.FC = () => {
   const handleDateChange = (event: any, selectedDate: Date | undefined) => {
     setDatePickerVisible(false);
     if (selectedDate) {
-      handleInputChange(currentPickerField, selectedDate.toISOString().split('T')[0]);
+      const date = new Date(selectedDate.getTime() - selectedDate.getTimezoneOffset() * 60000);
+      handleInputChange(currentPickerField, date.toISOString().split('T')[0]);
     }
   };
 
   const handleTimeChange = (event: any, selectedTime: Date | undefined) => {
     setTimePickerVisible(false);
     if (selectedTime) {
-      handleInputChange(currentPickerField, selectedTime.toTimeString().split(' ')[0].substring(0, 8)); // Incluye segundos
+      handleInputChange(currentPickerField, selectedTime.toTimeString().split(' ')[0].substring(0, 8));
     }
   };
 
@@ -171,21 +172,23 @@ const CreateTaskScreen: React.FC = () => {
       <View style={styles.modalOverlay}>
         <View style={styles.modalContainer}>
           <Text style={styles.modalTitle}>Selecciona una categoría</Text>
-          {categories.map((category, index) => (
-            <TouchableOpacity
-              key={index}
-              style={[
-                styles.categoryButton,
-                selectedCategory === category.name && styles.categoryButtonSelected,
-              ]}
-              onPress={() => {
-                setSelectedCategory(category.name);
-                setCategoryModalVisible(false);
-              }}
-            >
-              <Text style={styles.categoryButtonText}>{category.name}</Text>
-            </TouchableOpacity>
-          ))}
+          <ScrollView style={styles.modalScrollView}>
+            {categories.map((category, index) => (
+              <TouchableOpacity
+                key={index}
+                style={[
+                  styles.categoryButton,
+                  selectedCategory === category.name && styles.categoryButtonSelected,
+                ]}
+                onPress={() => {
+                  setSelectedCategory(category.name);
+                  setCategoryModalVisible(false);
+                }}
+              >
+                <Text style={styles.categoryButtonText}>{category.name}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
           <TouchableOpacity
             style={styles.addCategoryButton}
             onPress={() => {
@@ -200,6 +203,7 @@ const CreateTaskScreen: React.FC = () => {
       </View>
     </Modal>
   );
+
 
   const renderNewCategoryModal = () => (
     <Modal
@@ -278,7 +282,7 @@ const CreateTaskScreen: React.FC = () => {
         <View style={styles.modalContainer}>
           <Text style={styles.modalTitle}>Selecciona los integrantes</Text>
           {usersLoading ? (
-            <ActivityIndicator size="large" color="#0000ff" />
+            <ActivityIndicator size="large" color="#2A9D8F" />
           ) : usersError ? (
             <Text style={styles.errorText}>{usersError}</Text>
           ) : (
@@ -323,7 +327,7 @@ const CreateTaskScreen: React.FC = () => {
         <View style={styles.modalContainer}>
           <Text style={styles.modalTitle}>Selecciona los asignados</Text>
           {usersLoading ? (
-            <ActivityIndicator size="large" color="#0000ff" />
+            <ActivityIndicator size="large" color="#2A9D8F" />
           ) : usersError ? (
             <Text style={styles.errorText}>{usersError}</Text>
           ) : (
@@ -533,10 +537,10 @@ const CreateTaskScreen: React.FC = () => {
       </View>
 
       <TouchableOpacity style={styles.submitButton} onPress={handleCreateTask} disabled={loading}>
-        <Text style={styles.submitButtonText}>Listo</Text>
+        <Text style={styles.submitButtonText}>Crear Tarea</Text>
       </TouchableOpacity>
 
-      {loading && <ActivityIndicator size="large" color="#0000ff" />}
+      {loading && <ActivityIndicator size="large" color="#2A9D8F" />}
       {error && <Text style={styles.errorText}>{error}</Text>}
 
       {datePickerVisible && (
@@ -672,6 +676,10 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 12,
     marginBottom: 16,
+  },
+  modalScrollView: {
+    maxHeight: 300,
+    width: '100%',
   },
   modalButton: {
     backgroundColor: '#2A9D8F',

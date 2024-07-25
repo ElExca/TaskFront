@@ -13,6 +13,10 @@ interface TaskProviderProps {
 
 const TaskContext = createContext<{ tasks: Task[]; fetchTasksByCategory: (category: string) => void; loading: boolean } | undefined>(undefined);
 
+const sanitizeText = (text: string) => {
+  return text.replace(/['"]/g, ''); // Remueve comillas simples y dobles
+};
+
 export const TaskProviderCategory: React.FC<TaskProviderProps> = ({ children }) => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
@@ -34,7 +38,14 @@ export const TaskProviderCategory: React.FC<TaskProviderProps> = ({ children }) 
         if (response.ok) {
           const data = await response.json();
           console.log('Data received:', data);
-          setTasks(data);
+
+          // Sanitizar los títulos de las tareas
+          const sanitizedTasks = data.map((task: Task) => ({
+            ...task,
+            title: sanitizeText(task.title),
+          }));
+
+          setTasks(sanitizedTasks);
         } else {
           console.error('Error al obtener las tareas por categoría');
         }

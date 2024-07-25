@@ -8,6 +8,7 @@ const LoginScreen: React.FC = () => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  
 
   const handleLogin = async () => {
     if (!identifier || !password) {
@@ -75,7 +76,7 @@ const LoginScreen: React.FC = () => {
         />
 
         {loading ? (
-          <ActivityIndicator size="large" color="#87E2D0" style={styles.loader} />
+          <ActivityIndicator size="large" color="#2A9D8F" style={styles.loader} />
         ) : (
           <TouchableOpacity style={styles.button} onPress={handleLogin}>
             <Text style={styles.buttonText}>INICIAR SESIÓN</Text>

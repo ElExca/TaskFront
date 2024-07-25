@@ -6,6 +6,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { useEditTask } from '@/presentation/providers/EditTaskProvider';
 import { useCategories } from '@/presentation/providers/CategoryProvider';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface Subtask {
   title: string;
@@ -20,12 +21,25 @@ const EditTaskScreen: React.FC = () => {
   const { taskId } = route.params as { taskId: string };
   const [taskDetails, setTaskDetails] = useState<any>(null);
   const [selectedCategory, setSelectedCategory] = useState('');
+  const [selectedType, setSelectedType] = useState<string>('');
   const [datePickerVisible, setDatePickerVisible] = useState(false);
   const [timePickerVisible, setTimePickerVisible] = useState(false);
   const [pickerMode, setPickerMode] = useState<'date' | 'time'>('date');
   const [currentPickerField, setCurrentPickerField] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isCategoryModalVisible, setCategoryModalVisible] = useState(false);
+  const [isNewCategoryModalVisible, setNewCategoryModalVisible] = useState(false);
+  const [newCategory, setNewCategory] = useState('');
+  const [isWarningModalVisible, setWarningModalVisible] = useState(false);
+  const [warningMessage, setWarningMessage] = useState('');
+  const [isMembersModalVisible, setMembersModalVisible] = useState(false);
+  const [selectedMembers, setSelectedMembers] = useState<{ user_id: string, username: string }[]>([]);
+  const [selectedAssignees, setSelectedAssignees] = useState<{ user_id: string, username: string }[]>([]);
+  const [allUsers, setAllUsers] = useState<any[]>([]);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [usersError, setUsersError] = useState<string | null>(null);
+
+  const currentUser = 'Usuario Actual'; // Reemplaza esto con el nombre del usuario actual
 
   useEffect(() => {
     const loadTaskDetails = async () => {
@@ -40,6 +54,16 @@ const EditTaskScreen: React.FC = () => {
     if (task) {
       setTaskDetails(task);
       setSelectedCategory(task.category);
+      setSelectedType(task.type);
+      if (task.type === 'grupal') {
+        fetchAllUsers().then(() => {
+          setSelectedMembers(Array.isArray(task.user_id) ? task.user_id.map((user_id: string) => ({ user_id, username: user_id })) : []);
+        });
+      } else if (task.type === 'asignar') {
+        fetchAllUsers().then(() => {
+          setSelectedAssignees(Array.isArray(task.user_id) ? task.user_id.map((user_id: string) => ({ user_id, username: user_id })) : []);
+        });
+      }
     }
   }, [task]);
 
@@ -62,7 +86,9 @@ const EditTaskScreen: React.FC = () => {
   const handleDateChange = (event: any, selectedDate: Date | undefined) => {
     setDatePickerVisible(false);
     if (selectedDate) {
-      handleInputChange(currentPickerField, selectedDate.toISOString().split('T')[0]);
+      const date = new Date(selectedDate);
+      const isoDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().split('T')[0];
+      handleInputChange(currentPickerField, isoDate);
     }
   };
 
@@ -75,10 +101,15 @@ const EditTaskScreen: React.FC = () => {
 
   const handleUpdateTask = async () => {
     if (taskDetails) {
+      const user_ids = taskDetails.type === 'Asignar' ? selectedAssignees.map(assignee => assignee.user_id) : selectedMembers.map(member => member.user_id).filter(user_id => user_id !== currentUser);
       const updatedTaskDetails: any = {
         ...taskDetails,
         category: selectedCategory,
+        user_ids,
+        type: taskDetails.type.toLowerCase(),
       };
+
+      console.log('Sending updated task data:', updatedTaskDetails);
 
       try {
         await updateTask(taskId, updatedTaskDetails);
@@ -89,8 +120,229 @@ const EditTaskScreen: React.FC = () => {
     }
   };
 
+  const addCategory = async () => {
+    if (newCategory.trim()) {
+      const jwtToken = await AsyncStorage.getItem('jwtToken');
+      if (jwtToken) {
+        await fetch('http://18.211.141.106:5002/', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${jwtToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ name: newCategory }),
+        });
+        fetchCategories();
+        setSelectedCategory(newCategory);
+        setNewCategory('');
+        setNewCategoryModalVisible(false);
+        setCategoryModalVisible(false);
+      }
+    }
+  };
+
+  const fetchAllUsers = async () => {
+    setUsersLoading(true);
+    setUsersError(null);
+
+    try {
+      const jwtToken = await AsyncStorage.getItem('jwtToken');
+      if (jwtToken) {
+        const response = await fetch('http://18.211.141.106:5001/usernames', {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${jwtToken}`,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.message || 'Failed to fetch users');
+        }
+
+        setAllUsers(data.users || []);
+      }
+    } catch (error) {
+      setUsersError((error as Error).message);
+    } finally {
+      setUsersLoading(false);
+    }
+  };
+
+  const handleTypeChange = (newType: string) => {
+    const currentType = taskDetails.type;
+    if (
+      (currentType === 'individual' && newType === 'asignar') ||
+      (currentType === 'grupal' && newType !== 'grupal') ||
+      (currentType === 'asignar' && newType === 'grupal')
+    ) {
+      let warning = '';
+      if (currentType === 'individual' && newType === 'asignar') {
+        warning = 'No puedes cambiar una tarea individual a asignada.';
+      } else if (currentType === 'grupal') {
+        warning = 'No puedes cambiar una tarea grupal a individual o asignada.';
+      } else if (currentType === 'asignar' && newType === 'grupal') {
+        warning = 'No puedes cambiar una tarea asignada a grupal.';
+      }
+      setWarningMessage(warning);
+      setWarningModalVisible(true);
+    } else {
+      handleInputChange('type', newType);
+      setSelectedType(newType);
+      if (newType === 'grupal') {
+        fetchAllUsers().then(() => {
+          setSelectedMembers([{ user_id: currentUser, username: currentUser }]);
+        });
+      } else if (newType === 'asignar') {
+        fetchAllUsers().then(() => {
+          setSelectedAssignees([]);
+        });
+      } else {
+        setSelectedMembers([]);
+        setSelectedAssignees([]);
+      }
+    }
+  };
+
+  const renderCategoryModal = () => (
+    <Modal
+      transparent={true}
+      visible={isCategoryModalVisible}
+      onRequestClose={() => setCategoryModalVisible(false)}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContainer}>
+          <Text style={styles.modalTitle}>Selecciona una categoría</Text>
+          <ScrollView style={styles.modalScrollView}>
+            {categories.map((category, index) => (
+              <TouchableOpacity
+                key={index}
+                style={[
+                  styles.categoryButton,
+                  selectedCategory === category.name && styles.categoryButtonSelected,
+                ]}
+                onPress={() => {
+                  setSelectedCategory(category.name);
+                  setCategoryModalVisible(false);
+                }}
+              >
+                <Text style={styles.categoryButtonText}>{category.name}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+          <TouchableOpacity
+            style={styles.addCategoryButton}
+            onPress={() => {
+              setCategoryModalVisible(false);
+              setNewCategoryModalVisible(true);
+            }}
+          >
+            <Ionicons name="add" size={24} color="black" />
+            <Text style={styles.addCategoryText}>Agregar categoría</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+
+  
+  const renderNewCategoryModal = () => (
+    <Modal
+      transparent={true}
+      visible={isNewCategoryModalVisible}
+      onRequestClose={() => setNewCategoryModalVisible(false)}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContainer}>
+          <Text style={styles.modalTitle}>Crear categoría</Text>
+          <TextInput
+            style={styles.modalInput}
+            placeholder="Nombre de categoría"
+            value={newCategory}
+            onChangeText={setNewCategory}
+          />
+          <TouchableOpacity style={styles.modalButton} onPress={addCategory}>
+            <Ionicons name="checkmark" size={24} color="white" />
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+
+  const renderWarningModal = () => (
+    <Modal
+      transparent={true}
+      visible={isWarningModalVisible}
+      onRequestClose={() => setWarningModalVisible(false)}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContainer}>
+          <Text style={styles.modalTitle}>Advertencia</Text>
+          <Text style={styles.warningText}>{warningMessage}</Text>
+          <TouchableOpacity
+            style={styles.modalButton}
+            onPress={() => setWarningModalVisible(false)}
+          >
+            <Ionicons name="checkmark" size={24} color="white" />
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+
+  const renderMembersModal = () => (
+    <Modal
+      transparent={true}
+      visible={isMembersModalVisible}
+      onRequestClose={() => setMembersModalVisible(false)}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContainer}>
+          <Text style={styles.modalTitle}>Selecciona los integrantes</Text>
+          {usersLoading ? (
+            <ActivityIndicator size="large" color="#2A9D8F" />
+          ) : usersError ? (
+            <Text style={styles.errorText}>{usersError}</Text>
+          ) : (
+            allUsers.map((user, index) => (
+              <TouchableOpacity
+                key={index}
+                style={[
+                  styles.memberButton,
+                  selectedMembers.some(member => member.user_id === user.user_id) && styles.memberButtonSelected,
+                ]}
+                onPress={() => {
+                  if (selectedMembers.some(member => member.user_id === user.user_id)) {
+                    setSelectedMembers(selectedMembers.filter(member => member.user_id !== user.user_id));
+                  } else {
+                    setSelectedMembers([...selectedMembers, { user_id: user.user_id, username: user.username }]);
+                  }
+                }}
+              >
+                <Text style={styles.memberButtonText}>{user.username}</Text>
+              </TouchableOpacity>
+            ))
+          )}
+          <TouchableOpacity
+            style={styles.modalButton}
+            onPress={() => setMembersModalVisible(false)}
+          >
+            <Ionicons name="checkmark" size={24} color="white" />
+            <Text style={styles.addCategoryText}>Guardar</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+
   if (loading || !taskDetails) {
-    return <ActivityIndicator size="large" color="#0000ff" />;
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#2A9D8F" />
+      </View>
+    );
   }
 
   return (
@@ -214,12 +466,30 @@ const EditTaskScreen: React.FC = () => {
             key={type}
             style={[
               styles.typeButton,
-              taskDetails.type === type && styles.typeButtonSelected,
+              selectedType === type && styles.typeButtonSelected,
             ]}
-            onPress={() => handleInputChange('type', type)}
+            onPress={() => handleTypeChange(type)}
           >
             <Text style={styles.typeButtonText}>{type}</Text>
           </TouchableOpacity>
+        ))}
+      </View>
+
+      {taskDetails.type === 'grupal' && (
+        <TouchableOpacity
+          style={styles.input}
+          onPress={() => setMembersModalVisible(true)}
+        >
+          <Text style={{ color: '#000' }}>Seleccionar integrantes</Text>
+        </TouchableOpacity>
+      )}
+
+      <Text style={styles.label}>Integrantes</Text>
+      <View style={styles.selectedItemsContainer}>
+        {(taskDetails.type === 'grupal' ? selectedMembers : selectedAssignees).map((user, index) => (
+          <View key={index} style={styles.selectedItem}>
+            <Text style={styles.selectedItemText}>{user.username}</Text>
+          </View>
         ))}
       </View>
 
@@ -227,8 +497,28 @@ const EditTaskScreen: React.FC = () => {
         <Text style={styles.submitButtonText}>Actualizar</Text>
       </TouchableOpacity>
 
-      {loading && <ActivityIndicator size="large" color="#0000ff" />}
       {error && <Text style={styles.errorText}>{error}</Text>}
+      {datePickerVisible && (
+        <DateTimePicker
+          value={new Date()}
+          mode="date"
+          display="default"
+          onChange={handleDateChange}
+        />
+      )}
+      {timePickerVisible && (
+        <DateTimePicker
+          value={new Date()}
+          mode="time"
+          display="default"
+          onChange={handleTimeChange}
+        />
+      )}
+
+      {renderCategoryModal()}
+      {renderNewCategoryModal()}
+      {renderWarningModal()}
+      {renderMembersModal()}
     </ScrollView>
   );
 };
@@ -321,10 +611,111 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16,
   },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  modalContainer: {
+    width: 300,
+    backgroundColor: '#FFF',
+    borderRadius: 8,
+    padding: 16,
+    alignItems: 'center',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 16,
+  },
+  modalInput: {
+    width: '100%',
+    borderWidth: 1,
+    borderColor: '#DDD',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 16,
+  },
+  modalScrollView: {
+    maxHeight: 300,
+    width: '100%',
+  },
+  modalButton: {
+    backgroundColor: '#2A9D8F',
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  categoryButton: {
+    padding: 12,
+    borderRadius: 8,
+    backgroundColor: '#EEE',
+    marginVertical: 4,
+    width: '100%',
+    alignItems: 'center',
+  },
+  categoryButtonSelected: {
+    backgroundColor: '#2A9D8F',
+  },
+  categoryButtonText: {
+    color: '#000',
+    fontWeight: 'bold',
+  },
+  addCategoryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  addCategoryText: {
+    marginLeft: 8,
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  selectedItemsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginVertical: 8,
+  },
+ warningText: {
+    color: 'red',
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  selectedItem: {
+    backgroundColor: '#EEE',
+    borderRadius: 8,
+    padding: 8,
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F8F8F8',
+  },
+  selectedItemText: {
+    color: '#000',
+  },
   errorText: {
     color: 'red',
     textAlign: 'center',
     marginTop: 16,
+  },
+  memberButton: {
+    padding: 12,
+    borderRadius: 8,
+    backgroundColor: '#EEE',
+    marginVertical: 4,
+    width: '100%',
+    alignItems: 'center',
+  },
+  memberButtonSelected: {
+    backgroundColor: '#2A9D8F',
+  },
+  memberButtonText: {
+    color: '#000',
   },
 });
 
