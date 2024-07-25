@@ -24,6 +24,7 @@ interface TaskDetails {
 
 interface CreateTaskContextProps {
   createTask: (taskDetails: TaskDetails) => Promise<{ success: boolean; message: string }>;
+  updateTask: (taskId: string, taskDetails: TaskDetails) => Promise<{ success: boolean; message: string }>;
   loading: boolean;
   error: string | null;
 }
@@ -77,8 +78,43 @@ export const CreateTaskProvider: React.FC<CreateTaskProviderProps> = ({ children
     }
   };
 
+  const updateTask = async (taskId: string, taskDetails: TaskDetails): Promise<{ success: boolean; message: string }> => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const jwtToken = await AsyncStorage.getItem('jwtToken');
+
+      if (jwtToken) {
+        const response = await fetch(`http://18.211.141.106:5003/${taskId}`, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${jwtToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(taskDetails),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.message || 'Failed to update task');
+        }
+
+        return { success: true, message: 'Task updated successfully' };
+      } else {
+        throw new Error('Authentication token not found');
+      }
+    } catch (error) {
+      setError((error as Error).message);
+      return { success: false, message: (error as Error).message };
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <CreateTaskContext.Provider value={{ createTask, loading, error }}>
+    <CreateTaskContext.Provider value={{ createTask, updateTask, loading, error }}>
       {children}
     </CreateTaskContext.Provider>
   );

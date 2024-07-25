@@ -11,7 +11,7 @@ const TaskDetailScreen: React.FC = () => {
   const navigation = useNavigation();
   const route = useRoute<TaskDetailScreenRouteProp>();
   const { taskId } = route.params;
-  const { task, loading, error, fetchTaskDetails, updateSubtasks, setTask } = useTaskDetail();
+  const { task, loading, error, fetchTaskDetails, updateSubtasks, deleteTask, setTask } = useTaskDetail();
   const [modalVisible, setModalVisible] = useState(false);
   const [subtaskLoading, setSubtaskLoading] = useState(false);
 
@@ -20,17 +20,22 @@ const TaskDetailScreen: React.FC = () => {
   }, [taskId]);
 
   const handleEditPress = () => {
-    navigation.navigate('editTask', { task });
+    navigation.navigate('editTask', {taskId: taskId});
   };
 
   const handleDeletePress = () => {
     setModalVisible(true);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     setModalVisible(false);
-    Alert.alert('Tarea eliminada', 'La tarea ha sido eliminada correctamente.');
-    navigation.goBack();
+    try {
+      await deleteTask(taskId);
+      Alert.alert('Tarea eliminada', 'La tarea ha sido eliminada correctamente.');
+      navigation.goBack();
+    } catch (error) {
+      Alert.alert('Error', 'No se pudo eliminar la tarea.');
+    }
   };
 
   const handleSubtaskToggle = async (index: number) => {
@@ -50,10 +55,10 @@ const TaskDetailScreen: React.FC = () => {
   };
 
   const getProgressColor = (progress: number) => {
-    if (progress <= 25) return '#FF0000'; // Rojo
-    if (progress <= 50) return '#FFA500'; // Naranja
-    if (progress <= 75) return '#FFD700'; // Amarillo
-    return '#008000'; // Verde
+    if (progress <= 25) return '#FF0000'; 
+    if (progress <= 50) return '#FFA500'; 
+    if (progress <= 75) return '#FFD700'; 
+    return '#008000'; 
   };
 
   if (loading) {

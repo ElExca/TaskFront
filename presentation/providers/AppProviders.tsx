@@ -5,6 +5,7 @@ import { TaskProviderCategory } from '@/presentation/providers/TaskProviderCateg
 import { TaskProviderProgress } from '@/presentation/providers/TaskProviderProgress';
 import { CategoryProvider } from '@/presentation/providers/CategoryProvider';
 import { TaskDetailProvider } from '@/presentation/providers/TaskDetailProvider';
+import { EditTaskProvider } from '@/presentation/providers/EditTaskProvider';
 
 const AppProviders: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
@@ -13,7 +14,9 @@ const AppProviders: React.FC<{ children: React.ReactNode }> = ({ children }) => 
         <TaskProviderProgress>
           <CategoryProvider>
             <TaskDetailProvider>
+              <EditTaskProvider>
             {children}
+              </EditTaskProvider>
             </TaskDetailProvider>
           </CategoryProvider>
         </TaskProviderProgress>

@@ -13,7 +13,7 @@ const CategoryButton: React.FC<CategoryButtonProps> = ({ category, taskCount, co
   const opacity = useSharedValue(0);
 
   React.useEffect(() => {
-    opacity.value = withTiming(1, { duration: 500 });
+    opacity.value = withTiming(1, { duration: 1000 });
   }, [opacity]);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -24,7 +24,7 @@ const CategoryButton: React.FC<CategoryButtonProps> = ({ category, taskCount, co
     <Animated.View style={[styles.container, { backgroundColor: color }, animatedStyle]}>
       <TouchableOpacity onPress={onPress} style={styles.button}>
         <Text style={styles.categoryText}>{category}</Text>
-        <Text style={styles.taskCountText}>{taskCount} tareas</Text>
+        <Text style={styles.taskCountText}>{taskCount} 5 tareas</Text>
       </TouchableOpacity>
     </Animated.View>
   );

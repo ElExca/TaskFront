@@ -22,6 +22,7 @@ interface TaskDetailContextProps {
   error: string | null;
   fetchTaskDetails: (taskId: string) => void;
   updateSubtasks: (taskId: string, subtasks: { title: string; completed: boolean }[]) => Promise<void>;
+  deleteTask: (taskId: string) => Promise<void>;
   setTask: React.Dispatch<React.SetStateAction<Task | null>>;
 }
 
@@ -100,8 +101,35 @@ export const TaskDetailProvider: React.FC<TaskDetailProviderProps> = ({ children
     }
   };
 
+  const deleteTask = async (taskId: string) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const jwtToken = await AsyncStorage.getItem('jwtToken');
+      const response = await fetch(`http://18.211.141.106:5003/${taskId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${jwtToken}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.message || 'Failed to delete task');
+      }
+
+      setTask(null);
+    } catch (error) {
+      setError((error as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <TaskDetailContext.Provider value={{ task, loading, error, fetchTaskDetails, updateSubtasks, setTask }}>
+    <TaskDetailContext.Provider value={{ task, loading, error, fetchTaskDetails, updateSubtasks, deleteTask, setTask }}>
       {children}
     </TaskDetailContext.Provider>
   );

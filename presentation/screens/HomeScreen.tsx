@@ -44,7 +44,7 @@ const HomeScreen: React.FC = () => {
   }));
 
   // Progreso de tareas ajustado a 100%, 50% y 5%
-  const completedProgress = 100;
+  const completedProgress = 60;
   const inProgressProgress = 50;
   const notStartedProgress = 5;
 
