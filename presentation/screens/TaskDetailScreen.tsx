@@ -49,7 +49,7 @@ const TaskDetailScreen: React.FC = () => {
     setSubtaskLoading(true);
     try {
       await updateSubtasks(taskId, updatedSubtasks);
-      await fetchTaskDetails(taskId);  // Fetch task details again to update the state
+      await fetchTaskDetails(taskId); 
     } catch (error) {
       Alert.alert('Error', 'No se pudo actualizar la subtarea.');
     } finally {

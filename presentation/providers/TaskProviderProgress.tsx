@@ -6,7 +6,7 @@ interface Task {
   progress: number;
   title: string;
   status: string;
-  description?: string; // Agrega esto si también quieres sanitizar la descripción
+  description?: string;  
 }
 
 interface TaskProviderProps {
@@ -23,7 +23,7 @@ interface TaskContextProps {
 const TaskContext = createContext<TaskContextProps | undefined>(undefined);
 
 const sanitizeText = (text: string) => {
-  return text.replace(/['"]/g, ''); // Remueve comillas simples y dobles
+  return text.replace(/['"]/g, ''); 
 };
 
 export const TaskProviderProgress: React.FC<TaskProviderProps> = ({ children }) => {
@@ -47,11 +47,10 @@ export const TaskProviderProgress: React.FC<TaskProviderProps> = ({ children }) 
 
         if (response.ok) {
           const data = await response.json();
-          // Sanitiza los datos recibidos
           const sanitizedTasks = data.map((task: Task) => ({
             ...task,
             title: sanitizeText(task.title),
-            description: task.description ? sanitizeText(task.description) : undefined, // Sanitiza la descripción si existe
+            description: task.description ? sanitizeText(task.description) : undefined, 
           }));
           setTasks(sanitizedTasks);
         } else {
@@ -61,7 +60,7 @@ export const TaskProviderProgress: React.FC<TaskProviderProps> = ({ children }) 
         setError('No se encontró el token de autenticación');
       }
     } catch (error) {
-      console.error('Error al recuperar las tareas por estado de progreso', error);
+    
       setError('Error al recuperar las tareas');
     } finally {
       setLoading(false);

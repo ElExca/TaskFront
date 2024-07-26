@@ -47,7 +47,6 @@ const LoginScreen: React.FC = () => {
     } catch (error) {
       setLoading(false);
       Alert.alert('Error al iniciar sesión', 'Ocurrió un error al intentar iniciar sesión. Por favor, intenta nuevamente.');
-      console.error('Error al iniciar sesión', error);
     }
   };
 
@@ -67,8 +66,10 @@ const LoginScreen: React.FC = () => {
           placeholder="email@ejemplo.com o nombre de usuario"
           value={identifier}
           onChangeText={setIdentifier}
-          autoComplete="username"
-          textContentType="username"
+          textContentType="none"
+          importantForAutofill="no"
+          keyboardType="email-address"
+          contextMenuHidden={true} 
         />
         <Text>Contraseña</Text>
         <TextInput
@@ -77,8 +78,10 @@ const LoginScreen: React.FC = () => {
           secureTextEntry
           value={password}
           onChangeText={setPassword}
-          autoComplete="password"
-          textContentType="password"
+          autoComplete="off"
+          textContentType="none"
+          importantForAutofill="no"
+          contextMenuHidden={true} 
         />
 
         {loading ? (

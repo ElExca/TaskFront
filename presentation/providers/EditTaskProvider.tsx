@@ -38,7 +38,6 @@ interface EditTaskProviderProps {
   children: ReactNode;
 }
 
-// Función para decodificar caracteres de escape Unicode
 const decodeUnicode = (data: any) => {
   return JSON.parse(JSON.stringify(data), (key, value) =>
     typeof value === 'string'
@@ -49,9 +48,8 @@ const decodeUnicode = (data: any) => {
   );
 };
 
-// Función para sanitizar texto
 const sanitizeText = (text: string) => {
-  return text.replace(/['"]/g, ''); // Remueve comillas simples y dobles
+  return text.replace(/['"]/g, ''); 
 };
 
 export const EditTaskProvider: React.FC<EditTaskProviderProps> = ({ children }) => {
@@ -65,7 +63,7 @@ export const EditTaskProvider: React.FC<EditTaskProviderProps> = ({ children }) 
     setError(null);
 
     try {
-      console.log('Fetching task details for ID:', taskId);
+    
 
       const jwtToken = await AsyncStorage.getItem('jwtToken');
       const response = await fetch(`https://api-gateway.zapto.org:5000/tasks-api/task/${taskId}`, {
@@ -78,17 +76,16 @@ export const EditTaskProvider: React.FC<EditTaskProviderProps> = ({ children }) 
 
       const data = await response.json();
 
-      console.log('Response Status:', response.status);
-      console.log('Response Data:', data);
+   
 
       if (!response.ok) {
         throw new Error(data.message || 'Failed to fetch task details');
       }
 
-      // Decodificar caracteres de escape Unicode
+   
       const decodedData = decodeUnicode(data);
 
-      // Sanitiza los campos relevantes
+  
       const sanitizedTask = {
         ...decodedData,
         title: sanitizeText(decodedData.title),
@@ -115,7 +112,7 @@ export const EditTaskProvider: React.FC<EditTaskProviderProps> = ({ children }) 
     try {
       const jwtToken = await AsyncStorage.getItem('jwtToken');
 
-      // Sanitizar los datos de la tarea antes de enviarlos
+     
       const sanitizedTaskData = {
         ...taskData,
         title: sanitizeText(taskData.title),
@@ -126,7 +123,7 @@ export const EditTaskProvider: React.FC<EditTaskProviderProps> = ({ children }) 
         })),
       };
 
-      console.log('Sending updated task data:', sanitizedTaskData);
+    
 
       const response = await fetch(`https://api-gateway.zapto.org:5000/tasks-api/edit/${taskId}`, {
         method: 'PUT',
@@ -140,17 +137,16 @@ export const EditTaskProvider: React.FC<EditTaskProviderProps> = ({ children }) 
       const data = await response.json();
 
       if (!response.ok) {
-        console.log('Update failed with response:', data);
+      
         throw new Error(data.error || 'Failed to update task');
       }
 
-      console.log('Updated Task Data:', sanitizedTaskData);
+      
 
-      // Actualizar los detalles de la tarea después de actualizarla
       await fetchTaskDetails(taskId);
       setSuccess(true);
     } catch (error) {
-      console.log('Update task error:', (error as Error).message);
+    
       setError((error as Error).message);
     } finally {
       setLoading(false);

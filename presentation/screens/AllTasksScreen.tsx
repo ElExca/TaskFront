@@ -15,7 +15,6 @@ const AllTasksScreen: React.FC = () => {
 
   useFocusEffect(
     useCallback(() => {
-      console.log('Fetching all tasks');
       fetchTasks();
     }, [fetchTasks])
   );

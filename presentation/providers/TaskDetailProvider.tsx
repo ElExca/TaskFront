@@ -33,7 +33,7 @@ interface TaskDetailProviderProps {
 }
 
 const sanitizeText = (text: string) => {
-  return text.replace(/['"]/g, ''); // Remueve comillas simples y dobles
+  return text.replace(/['"]/g, '');
 };
 
 export const TaskDetailProvider: React.FC<TaskDetailProviderProps> = ({ children }) => {
@@ -61,14 +61,13 @@ export const TaskDetailProvider: React.FC<TaskDetailProviderProps> = ({ children
         throw new Error(data.message || 'Failed to fetch task details');
       }
 
-      // Decodificar caracteres de escape Unicode
       const decodedData = JSON.parse(JSON.stringify(data), (key, value) =>
         typeof value === 'string' ? value.replace(/\\u[\dA-F]{4}/gi, match => {
           return String.fromCharCode(parseInt(match.replace(/\\u/g, ''), 16));
         }) : value
       );
 
-      // Sanitiza los campos relevantes
+
       const sanitizedTask = {
         ...decodedData,
         title: sanitizeText(decodedData.title),
@@ -107,7 +106,7 @@ export const TaskDetailProvider: React.FC<TaskDetailProviderProps> = ({ children
         throw new Error(data.message || 'Failed to update subtasks');
       }
 
-      // Update the task details after updating the subtasks
+
       await fetchTaskDetails(taskId);
     } catch (error) {
       setError((error as Error).message);

@@ -22,7 +22,7 @@ export const CategoryProvider: React.FC<CategoryProviderProps> = ({ children }) 
   const [categories, setCategories] = useState<Category[]>([]);
 
   const sanitizeCategoryName = (name: string) => {
-    return name.replace(/['"]/g, ''); // Remueve comillas simples y dobles
+    return name.replace(/['"]/g, ''); 
   };
 
   const fetchCategories = async () => {
@@ -46,11 +46,11 @@ export const CategoryProvider: React.FC<CategoryProviderProps> = ({ children }) 
           }));
           setCategories(categoriesData);
         } else {
-         /*  console.error('Error al obtener las categorías'); */
+         
         }
       }
     } catch (error) {
-      /* console.error('Error al recuperar las categorías', error); */
+      
     }
   };
 

@@ -17,7 +17,6 @@ const CategoryTasksScreen: React.FC = () => {
 
   useFocusEffect(
     useCallback(() => {
-      console.log(`Fetching tasks for category: ${category}`);
       fetchTasksByCategory(category);
     }, [category])
   );
@@ -27,7 +26,6 @@ const CategoryTasksScreen: React.FC = () => {
   };
 
   useEffect(() => {
-    console.log('Tasks:', tasks); 
   }, [tasks]);
 
   return (

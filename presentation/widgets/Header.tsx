@@ -24,7 +24,7 @@ const Header: React.FC = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [modalMessage, setModalMessage] = useState('');
-  const [loading, setLoading] = useState(false); // Estado para manejar el indicador de carga
+  const [loading, setLoading] = useState(false);  
   const translateY = useSharedValue(-50);
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
 
@@ -43,7 +43,7 @@ const Header: React.FC = () => {
   const toggleNotifications = async () => {
     setNotificationsVisible(!notificationsVisible);
     if (!notificationsVisible) {
-      setLoading(true); // Muestra el indicador de carga
+      setLoading(true);  
       try {
         const jwtToken = await AsyncStorage.getItem('jwtToken');
         if (jwtToken) {
@@ -56,29 +56,24 @@ const Header: React.FC = () => {
 
           if (response.ok) {
             const data = await response.json();
-            console.log('Received notifications:', data);
             if (Array.isArray(data)) {
               setNotifications(data);
             } else {
-              console.error('Unexpected data format:', data);
               setNotifications([]);
             }
           } else {
-            console.error('Error al obtener notificaciones');
             setNotifications([]);
           }
         }
       } catch (error) {
-        console.error('Error al recuperar el token', error);
         setNotifications([]);
       } finally {
-        setLoading(false); // Oculta el indicador de carga
+        setLoading(false); 
       }
     }
   };
 
   const handleTaskPress = async (taskId: string) => {
-    console.log('Navigating to taskDetail with taskId:', taskId);
     try {
       const jwtToken = await AsyncStorage.getItem('jwtToken');
       if (jwtToken) {
@@ -89,11 +84,9 @@ const Header: React.FC = () => {
           },
         });
 
-        console.log('Task fetch response status:', response.status);
 
         if (response.ok) {
           const taskData = await response.json();
-          console.log('Task data:', taskData);
 
           if (taskData && Object.keys(taskData).length > 0) {
             navigation.navigate('taskDetail', { taskId });
@@ -107,7 +100,6 @@ const Header: React.FC = () => {
         }
       }
     } catch (error) {
-      console.error('Error al verificar la tarea', error);
       setModalMessage('Error al verificar la tarea.');
       setModalVisible(true);
     }
@@ -133,7 +125,6 @@ const Header: React.FC = () => {
         }
       }
     } catch (error) {
-      console.error('Error al cerrar sesión', error);
       setModalMessage('Error al cerrar sesión.');
       setModalVisible(true);
     }

@@ -51,13 +51,11 @@ const HomeScreen: React.FC = () => {
   useFocusEffect(
     useCallback(() => {
       const onBackPress = () => {
-        // Previene salir de la pantalla de inicio con el botón de retroceso
         return true;
       };
 
       BackHandler.addEventListener('hardwareBackPress', onBackPress);
       
-      // Cleanup event listener on screen unmount
       return () => BackHandler.removeEventListener('hardwareBackPress', onBackPress);
     }, [])
   );
@@ -67,7 +65,7 @@ const HomeScreen: React.FC = () => {
       opacity.value = withTiming(1, { duration: 500 });
       translateY.value = withTiming(0, { duration: 500 });
       fetchCategories();
-      fetchTasksByProgress('all'); // Assumes you have a way to fetch all tasks
+      fetchTasksByProgress('all');  
       fetchTaskSummary();
     }, [opacity, translateY])
   );

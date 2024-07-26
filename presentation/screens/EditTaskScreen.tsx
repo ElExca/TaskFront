@@ -42,7 +42,7 @@ const EditTaskScreen: React.FC = () => {
   const [isSuccessModalVisible, setIsSuccessModalVisible] = useState(false);
   const [isErrorModalVisible, setIsErrorModalVisible] = useState(false);
 
-  const currentUser = 'Usuario Actual'; // Reemplaza esto con el nombre del usuario actual
+  const currentUser = 'Usuario Actual';  
 
   useFocusEffect(
     useCallback(() => {
@@ -52,7 +52,6 @@ const EditTaskScreen: React.FC = () => {
       };
 
 
-      // Reset modal states and clear success/error status
       setSelectedCategory('');
       setSelectedType('');
       setNewCategory('');
@@ -67,7 +66,6 @@ const EditTaskScreen: React.FC = () => {
       setMembersModalVisible(false);
       setIsErrorModalVisible(false);
 
-      // Clear the success modal if it was showing
       if (isSuccessModalVisible) {
         setIsSuccessModalVisible(false);
       }
@@ -162,7 +160,6 @@ const EditTaskScreen: React.FC = () => {
         type: taskDetails.type.toLowerCase(),
       };
 
-      console.log('Sending updated task data:', updatedTaskDetails);
 
       try {
         await updateTask(taskId, updatedTaskDetails);

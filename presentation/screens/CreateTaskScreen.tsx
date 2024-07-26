@@ -9,7 +9,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 
 const CreateTaskScreen: React.FC = () => {
-  const currentUser = 'Usuario Actual'; // Reemplaza esto con el nombre del usuario actual
+  const currentUser = 'Usuario Actual';  
   const { createTask, loading, error } = useCreateTask();
   const { categories, fetchCategories } = useCategories();
   const navigation = useNavigation();
@@ -181,7 +181,6 @@ const CreateTaskScreen: React.FC = () => {
       user_ids,
     };
 
-    console.log('Task JSON:', JSON.stringify(newTaskDetails, null, 2));
 
     try {
       const result = await createTask(newTaskDetails);
@@ -189,14 +188,12 @@ const CreateTaskScreen: React.FC = () => {
         setSuccessModalVisible(true);
         setTimeout(() => {
           setSuccessModalVisible(false);
-          navigation.navigate('home'); // Reemplaza 'Home' con el nombre de tu pantalla principal
-        }, 2000); // Espera 2 segundos antes de navegar
+          navigation.navigate('home'); 
+        }, 2000); 
       } else {
-        console.log('Create task error message:', result.message); // Log the error message from the backend
         setErrorMessage(result.message);
       }
     } catch (error) {
-      console.log('Create task error:', (error as Error).message);
       setErrorMessage('Error en la creación de la tarea.');
     }
   };
@@ -279,7 +276,7 @@ const CreateTaskScreen: React.FC = () => {
             style={styles.modalButton}
             onPress={() => {
               setSuccessModalVisible(false);
-              navigation.navigate('home'); // Reemplaza 'Home' con el nombre de tu pantalla principal
+              navigation.navigate('home');  
             }}
           >
             <Ionicons name="checkmark" size={24} color="white" />
@@ -547,10 +544,10 @@ const CreateTaskScreen: React.FC = () => {
               handleInputChange('type', type);
               if (type === 'Grupal') {
                 setSelectedMembers([{ user_id: currentUser, username: currentUser }]);
-                fetchAllUsers(); // Fetch users when "Grupal" is selected
+                fetchAllUsers();
               } else if (type === 'Asignar') {
                 setSelectedMembers([]);
-                fetchAllUsers(); // Fetch users when "Asignar" is selected
+                fetchAllUsers(); 
               } else {
                 setSelectedMembers([]);
               }

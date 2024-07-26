@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, StyleSheet, Button, Image, TouchableOpacity, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as ScreenCapture from 'expo-screen-capture';
@@ -10,7 +10,7 @@ const RegisterScreen: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const router = useRouter();
 
-  React.useEffect(() => {
+  useEffect(() => {
     const preventScreenCapture = async () => {
       await ScreenCapture.preventScreenCaptureAsync();
     };
@@ -80,7 +80,7 @@ const RegisterScreen: React.FC = () => {
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <Image
-        source={require('@/assets/images/logo.png')} // Asegúrate de tener esta imagen en tu carpeta de assets
+        source={require('@/assets/images/logo.png')}
         style={styles.logo}
       />
       <Text style={styles.title}>Crea una cuenta</Text>
@@ -93,6 +93,7 @@ const RegisterScreen: React.FC = () => {
           placeholder="Paola Penagos"
           value={name}
           onChangeText={setName}
+          autoCorrect={false}
         />
         <Text>Correo</Text>
         <TextInput
@@ -101,6 +102,7 @@ const RegisterScreen: React.FC = () => {
           keyboardType="email-address"
           value={email}
           onChangeText={setEmail}
+          autoCorrect={false}
         />
         <Text>Contraseña</Text>
         <TextInput
@@ -109,6 +111,8 @@ const RegisterScreen: React.FC = () => {
           secureTextEntry
           value={password}
           onChangeText={setPassword}
+          autoComplete="off"
+          autoCorrect={false}
         />
         <Text>Confirmar contraseña</Text>
         <TextInput
@@ -117,6 +121,8 @@ const RegisterScreen: React.FC = () => {
           secureTextEntry
           value={confirmPassword}
           onChangeText={setConfirmPassword}
+          autoComplete="off"
+          autoCorrect={false}
         />
 
         <TouchableOpacity style={styles.button} onPress={handleRegister}>

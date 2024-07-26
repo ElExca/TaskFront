@@ -14,7 +14,7 @@ interface TaskProviderProps {
 const TaskContext = createContext<{ tasks: Task[]; fetchTasksByCategory: (category: string) => void; loading: boolean } | undefined>(undefined);
 
 const sanitizeText = (text: string) => {
-  return text.replace(/['"]/g, ''); // Remueve comillas simples y dobles
+  return text.replace(/['"]/g, ''); 
 };
 
 export const TaskProviderCategory: React.FC<TaskProviderProps> = ({ children }) => {
@@ -23,7 +23,7 @@ export const TaskProviderCategory: React.FC<TaskProviderProps> = ({ children }) 
 
   const fetchTasksByCategory = async (category: string) => {
     setLoading(true);
-    console.log(`Fetching tasks for category: ${category}`);
+
     try {
       const jwtToken = await AsyncStorage.getItem('jwtToken');
       if (jwtToken) {
@@ -37,9 +37,7 @@ export const TaskProviderCategory: React.FC<TaskProviderProps> = ({ children }) 
 
         if (response.ok) {
           const data = await response.json();
-          console.log('Data received:', data);
 
-          // Sanitizar los títulos de las tareas
           const sanitizedTasks = data.map((task: Task) => ({
             ...task,
             title: sanitizeText(task.title),
@@ -47,11 +45,9 @@ export const TaskProviderCategory: React.FC<TaskProviderProps> = ({ children }) 
 
           setTasks(sanitizedTasks);
         } else {
-          /* console.error('Error al obtener las tareas por categoría'); */
         }
       }
     } catch (error) {
-      /* console.error('Error al recuperar las tareas por categoría', error); */
     } finally {
       setLoading(false);
     }

@@ -21,7 +21,7 @@ interface TaskProviderProps {
 }
 
 const sanitizeText = (text: string) => {
-  return text.replace(/['"]/g, ''); // Remueve comillas simples y dobles
+  return text.replace(/['"]/g, ''); 
 };
 
 export const TaskProvider: React.FC<TaskProviderProps> = ({ children }) => {
@@ -49,7 +49,7 @@ export const TaskProvider: React.FC<TaskProviderProps> = ({ children }) => {
         throw new Error(data.message || 'Failed to fetch tasks');
       }
 
-      // Sanitizar los títulos de las tareas
+
       const sanitizedTasks = data.map((task: Task) => ({
         ...task,
         title: sanitizeText(task.title),
