@@ -455,7 +455,7 @@ const EditTaskScreen: React.FC = () => {
           </TouchableOpacity>
         ))}
       </View>
-
+      <Text style={styles.label}>Fecha de incio de recordatorios</Text>
       <TouchableOpacity
         style={styles.input}
         onPress={() => showPicker('start_reminder_date', 'date')}
@@ -465,15 +465,8 @@ const EditTaskScreen: React.FC = () => {
         </Text>
       </TouchableOpacity>
 
-      <TouchableOpacity
-        style={styles.input}
-        onPress={() => showPicker('due_date', 'date')}
-      >
-        <Text style={{ color: taskDetails.due_date ? '#000' : '#AAA' }}>
-          {taskDetails.due_date || 'Fecha límite'}
-        </Text>
-      </TouchableOpacity>
 
+      <Text style={styles.label}>Hora de inicio de recordatorio</Text>
       <TouchableOpacity
         style={styles.input}
         onPress={() => showPicker('start_reminder_time', 'time')}
@@ -482,7 +475,7 @@ const EditTaskScreen: React.FC = () => {
           {taskDetails.start_reminder_time || 'Inicio de recordatorios'}
         </Text>
       </TouchableOpacity>
-
+      <Text style={styles.label}>Hora final de recordatorio</Text>
       <TouchableOpacity
         style={styles.input}
         onPress={() => showPicker('end_reminder_time', 'time')}
@@ -491,7 +484,16 @@ const EditTaskScreen: React.FC = () => {
           {taskDetails.end_reminder_time || 'Fin de recordatorios'}
         </Text>
       </TouchableOpacity>
-
+      <Text style={styles.label}>Fecha límite para completar la tarea</Text>
+      <TouchableOpacity
+        style={styles.input}
+        onPress={() => showPicker('due_date', 'date')}
+      >
+        <Text style={{ color: taskDetails.due_date ? '#000' : '#AAA' }}>
+          {taskDetails.due_date || 'Fecha límite'}
+        </Text>
+      </TouchableOpacity>
+      <Text style={styles.label}>Hora límite para completar la tarea</Text>
       <TouchableOpacity
         style={styles.input}
         onPress={() => showPicker('due_time', 'time')}

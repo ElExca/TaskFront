@@ -477,7 +477,7 @@ const CreateTaskScreen: React.FC = () => {
           {taskDetails.startTime || 'Inicio de recordatorios'}
         </Text>
       </TouchableOpacity>
-      <Text style={styles.label}>Hora de final de recordatorio</Text>
+      <Text style={styles.label}>Hora final de recordatorio</Text>
       <TouchableOpacity
         style={styles.input}
         onPress={() => showPicker('endTime', 'time')}
@@ -486,7 +486,7 @@ const CreateTaskScreen: React.FC = () => {
           {taskDetails.endTime || 'Fin de recordatorios'}
         </Text>
       </TouchableOpacity>
-      <Text style={styles.label}>Fecha límite para completar</Text>
+      <Text style={styles.label}>Fecha límite para completar la tarea</Text>
       <TouchableOpacity
         style={styles.input}
         onPress={() => showPicker('endDate', 'date')}
@@ -495,7 +495,7 @@ const CreateTaskScreen: React.FC = () => {
           {taskDetails.endDate || 'Fecha límite'}
         </Text>
       </TouchableOpacity>
-      <Text style={styles.label}>Hora límite para completar</Text>
+      <Text style={styles.label}>Hora límite para completar la tarea</Text>
 
       <TouchableOpacity
         style={styles.input}
