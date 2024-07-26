@@ -47,7 +47,7 @@ const Header: React.FC = () => {
       try {
         const jwtToken = await AsyncStorage.getItem('jwtToken');
         if (jwtToken) {
-          const response = await fetch('http://18.211.141.106:5003/notifications', {
+          const response = await fetch('https://api-gateway.zapto.org:5000/tasks-api/notifications', {
             method: 'GET',
             headers: {
               'Authorization': `Bearer ${jwtToken}`,
@@ -82,7 +82,7 @@ const Header: React.FC = () => {
     try {
       const jwtToken = await AsyncStorage.getItem('jwtToken');
       if (jwtToken) {
-        const response = await fetch(`http://18.211.141.106:5003/task/${taskId}`, {
+        const response = await fetch(`https://api-gateway.zapto.org:5000/tasks-api/task/${taskId}`, {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${jwtToken}`,
@@ -117,7 +117,7 @@ const Header: React.FC = () => {
     try {
       const jwtToken = await AsyncStorage.getItem('jwtToken');
       if (jwtToken) {
-        const response = await fetch('http://18.211.141.106:5001/logout', {
+        const response = await fetch('https://api-gateway.zapto.org:5000/users-api/logout', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${jwtToken}`,

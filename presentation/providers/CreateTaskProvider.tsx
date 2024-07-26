@@ -1,4 +1,3 @@
-// CreateTaskProvider.tsx
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -48,7 +47,7 @@ export const CreateTaskProvider: React.FC<CreateTaskProviderProps> = ({ children
       const userId = await AsyncStorage.getItem('userId'); // Assuming you have stored userId in AsyncStorage
 
       if (jwtToken && userId) {
-        const response = await fetch('http://18.211.141.106:5003/', {
+        const response = await fetch('https://api-gateway.zapto.org:5000/tasks-api/create', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${jwtToken}`,
@@ -63,7 +62,8 @@ export const CreateTaskProvider: React.FC<CreateTaskProviderProps> = ({ children
         const data = await response.json();
 
         if (!response.ok) {
-          throw new Error(data.message || 'Failed to create task');
+          console.log('Create task failed with response:', data);
+          throw new Error(data.error || 'Failed to create task');
         }
 
         return { success: true, message: 'Task created successfully' };
@@ -71,6 +71,7 @@ export const CreateTaskProvider: React.FC<CreateTaskProviderProps> = ({ children
         throw new Error('Authentication token or user ID not found');
       }
     } catch (error) {
+      console.log('Create task error:', (error as Error).message);
       setError((error as Error).message);
       return { success: false, message: (error as Error).message };
     } finally {
@@ -86,7 +87,7 @@ export const CreateTaskProvider: React.FC<CreateTaskProviderProps> = ({ children
       const jwtToken = await AsyncStorage.getItem('jwtToken');
 
       if (jwtToken) {
-        const response = await fetch(`http://18.211.141.106:5003/${taskId}`, {
+        const response = await fetch(`https://api-gateway.zapto.org:5000/tasks-api/edit/${taskId}`, {
           method: 'PUT',
           headers: {
             'Authorization': `Bearer ${jwtToken}`,
@@ -98,7 +99,8 @@ export const CreateTaskProvider: React.FC<CreateTaskProviderProps> = ({ children
         const data = await response.json();
 
         if (!response.ok) {
-          throw new Error(data.message || 'Failed to update task');
+          console.log('Update task failed with response:', data);
+          throw new Error(data.error || 'Failed to update task');
         }
 
         return { success: true, message: 'Task updated successfully' };
@@ -106,6 +108,7 @@ export const CreateTaskProvider: React.FC<CreateTaskProviderProps> = ({ children
         throw new Error('Authentication token not found');
       }
     } catch (error) {
+      console.log('Update task error:', (error as Error).message);
       setError((error as Error).message);
       return { success: false, message: (error as Error).message };
     } finally {

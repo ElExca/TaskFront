@@ -29,7 +29,7 @@ export const CategoryProvider: React.FC<CategoryProviderProps> = ({ children }) 
     try {
       const jwtToken = await AsyncStorage.getItem('jwtToken');
       if (jwtToken) {
-        const response = await fetch('http://18.211.141.106:5002/categories', {
+        const response = await fetch('https://api-gateway.zapto.org:5000/categories-api/categories', {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${jwtToken}`,

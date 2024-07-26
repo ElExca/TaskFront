@@ -47,7 +47,7 @@ export const TaskDetailProvider: React.FC<TaskDetailProviderProps> = ({ children
 
     try {
       const jwtToken = await AsyncStorage.getItem('jwtToken');
-      const response = await fetch(`http://18.211.141.106:5003/task/${taskId}`, {
+      const response = await fetch(`https://api-gateway.zapto.org:5000/tasks-api/task/${taskId}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${jwtToken}`,
@@ -93,7 +93,7 @@ export const TaskDetailProvider: React.FC<TaskDetailProviderProps> = ({ children
 
     try {
       const jwtToken = await AsyncStorage.getItem('jwtToken');
-      const response = await fetch(`http://18.211.141.106:5003/${taskId}/subtasks`, {
+      const response = await fetch(`https://api-gateway.zapto.org:5000/tasks-api/task/${taskId}/subtasks`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${jwtToken}`,
@@ -122,7 +122,7 @@ export const TaskDetailProvider: React.FC<TaskDetailProviderProps> = ({ children
 
     try {
       const jwtToken = await AsyncStorage.getItem('jwtToken');
-      const response = await fetch(`http://18.211.141.106:5003/${taskId}`, {
+      const response = await fetch(`https://api-gateway.zapto.org:5000/tasks-api/task/delete/${taskId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${jwtToken}`,

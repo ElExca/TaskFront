@@ -35,7 +35,7 @@ export const TaskProvider: React.FC<TaskProviderProps> = ({ children }) => {
 
     try {
       const jwtToken = await AsyncStorage.getItem('jwtToken');
-      const response = await fetch('http://18.211.141.106:5003/tasks', {
+      const response = await fetch('https://api-gateway.zapto.org:5000/tasks-api/tasks/user', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${jwtToken}`,

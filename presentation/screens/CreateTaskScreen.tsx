@@ -63,7 +63,7 @@ const CreateTaskScreen: React.FC = () => {
       const jwtToken = await AsyncStorage.getItem('jwtToken');
       if (jwtToken) {
         try {
-          const response = await fetch('http://18.211.141.106:5002/', {
+          const response = await fetch('https://api-gateway.zapto.org:5000/categories-api/create', {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${jwtToken}`,
@@ -124,7 +124,7 @@ const CreateTaskScreen: React.FC = () => {
     try {
       const jwtToken = await AsyncStorage.getItem('jwtToken');
       if (jwtToken) {
-        const response = await fetch('http://18.211.141.106:5001/usernames', {
+        const response = await fetch('https://api-gateway.zapto.org:5000/users-api/usernames', {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${jwtToken}`,
@@ -192,9 +192,11 @@ const CreateTaskScreen: React.FC = () => {
           navigation.navigate('home'); // Reemplaza 'Home' con el nombre de tu pantalla principal
         }, 2000); // Espera 2 segundos antes de navegar
       } else {
+        console.log('Create task error message:', result.message); // Log the error message from the backend
         setErrorMessage(result.message);
       }
     } catch (error) {
+      console.log('Create task error:', (error as Error).message);
       setErrorMessage('Error en la creación de la tarea.');
     }
   };
@@ -408,7 +410,7 @@ const CreateTaskScreen: React.FC = () => {
       {renderAssigneesModal()}
       <Header />
       <Text style={styles.title}>Crear nueva tarea</Text>
-
+      <Text style={styles.label}>Título de la tarea</Text>
       <TextInput
         style={styles.input}
         placeholder="Título de tu tarea"
@@ -419,6 +421,7 @@ const CreateTaskScreen: React.FC = () => {
         <Text style={styles.errorText}>El título debe tener entre 3 y 50 caracteres.</Text>
       )}
 
+      <Text style={styles.label}>Descripción</Text>
       <TextInput
         style={styles.input}
         placeholder="Descripción"
@@ -429,10 +432,12 @@ const CreateTaskScreen: React.FC = () => {
         <Text style={styles.errorText}>La descripción debe tener entre 3 y 500 caracteres.</Text>
       )}
 
+    <Text style={styles.label}>Selecciona una categoría</Text>
       <TouchableOpacity
         style={styles.input}
         onPress={() => setCategoryModalVisible(true)}
       >
+        
         <Text style={{ color: selectedCategory ? '#000' : '#AAA' }}>
           {selectedCategory || 'Selecciona una categoría'}
         </Text>
@@ -453,7 +458,7 @@ const CreateTaskScreen: React.FC = () => {
           </TouchableOpacity>
         ))}
       </View>
-
+      <Text style={styles.label}>Fecha de inicio de recordatorios</Text>
       <TouchableOpacity
         style={styles.input}
         onPress={() => showPicker('startDate', 'date')}
@@ -463,15 +468,7 @@ const CreateTaskScreen: React.FC = () => {
         </Text>
       </TouchableOpacity>
 
-      <TouchableOpacity
-        style={styles.input}
-        onPress={() => showPicker('endDate', 'date')}
-      >
-        <Text style={{ color: taskDetails.endDate ? '#000' : '#AAA' }}>
-          {taskDetails.endDate || 'Fecha límite'}
-        </Text>
-      </TouchableOpacity>
-
+      <Text style={styles.label}>Hora de inicio de recordatorio</Text>
       <TouchableOpacity
         style={styles.input}
         onPress={() => showPicker('startTime', 'time')}
@@ -480,7 +477,7 @@ const CreateTaskScreen: React.FC = () => {
           {taskDetails.startTime || 'Inicio de recordatorios'}
         </Text>
       </TouchableOpacity>
-
+      <Text style={styles.label}>Hora de final de recordatorio</Text>
       <TouchableOpacity
         style={styles.input}
         onPress={() => showPicker('endTime', 'time')}
@@ -489,6 +486,16 @@ const CreateTaskScreen: React.FC = () => {
           {taskDetails.endTime || 'Fin de recordatorios'}
         </Text>
       </TouchableOpacity>
+      <Text style={styles.label}>Fecha límite para completar</Text>
+      <TouchableOpacity
+        style={styles.input}
+        onPress={() => showPicker('endDate', 'date')}
+      >
+        <Text style={{ color: taskDetails.endDate ? '#000' : '#AAA' }}>
+          {taskDetails.endDate || 'Fecha límite'}
+        </Text>
+      </TouchableOpacity>
+      <Text style={styles.label}>Hora límite para completar</Text>
 
       <TouchableOpacity
         style={styles.input}
@@ -586,7 +593,7 @@ const CreateTaskScreen: React.FC = () => {
       </TouchableOpacity>
 
       {loading && <ActivityIndicator size="large" color="#2A9D8F" />}
-      {error && <Text style={styles.errorText}>{error}</Text>}
+     {/*  {error && <Text style={styles.errorText}>{error}</Text>} */}
 
       {datePickerVisible && (
         <DateTimePicker

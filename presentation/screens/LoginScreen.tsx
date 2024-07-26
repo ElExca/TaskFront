@@ -21,7 +21,7 @@ const LoginScreen: React.FC = () => {
     setLoading(true);
 
     try {
-      const response = await fetch('http://18.211.141.106:5001/login', {
+      const response = await fetch('https://api-gateway.zapto.org:5000/users-api/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

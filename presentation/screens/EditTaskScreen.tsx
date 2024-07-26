@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView, Modal, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Header from '@/presentation/widgets/Header';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useEditTask } from '@/presentation/providers/EditTaskProvider';
 import { useCategories } from '@/presentation/providers/CategoryProvider';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface Subtask {
@@ -14,7 +14,7 @@ interface Subtask {
 }
 
 const EditTaskScreen: React.FC = () => {
-  const { task, loading, error, fetchTaskDetails, updateTask } = useEditTask();
+  const { task, loading, error, success, fetchTaskDetails, updateTask, clearStatus } = useEditTask();
   const { categories, fetchCategories } = useCategories();
   const navigation = useNavigation();
   const route = useRoute();
@@ -39,17 +39,44 @@ const EditTaskScreen: React.FC = () => {
   const [allUsers, setAllUsers] = useState<any[]>([]);
   const [usersLoading, setUsersLoading] = useState(false);
   const [usersError, setUsersError] = useState<string | null>(null);
+  const [isSuccessModalVisible, setIsSuccessModalVisible] = useState(false);
+  const [isErrorModalVisible, setIsErrorModalVisible] = useState(false);
 
   const currentUser = 'Usuario Actual'; // Reemplaza esto con el nombre del usuario actual
 
-  useEffect(() => {
-    const loadTaskDetails = async () => {
-      await fetchTaskDetails(taskId);
-    };
+  useFocusEffect(
+    useCallback(() => {
+      const loadTaskDetails = async () => {
+        await fetchTaskDetails(taskId);
+        
+      };
 
-    fetchCategories();
-    loadTaskDetails();
-  }, [taskId]);
+
+      // Reset modal states and clear success/error status
+      setSelectedCategory('');
+      setSelectedType('');
+      setNewCategory('');
+      setCategoryErrorMessage(null);
+      setWarningMessage('');
+      setSelectedMembers([]);
+      setSelectedAssignees([]);
+      setErrorMessage(null);
+      setCategoryModalVisible(false);
+      setNewCategoryModalVisible(false);
+      setWarningModalVisible(false);
+      setMembersModalVisible(false);
+      setIsErrorModalVisible(false);
+
+      // Clear the success modal if it was showing
+      if (isSuccessModalVisible) {
+        setIsSuccessModalVisible(false);
+      }
+
+      clearStatus();
+      fetchCategories();
+      loadTaskDetails();
+    }, [taskId])
+  );
 
   useEffect(() => {
     if (task) {
@@ -67,6 +94,18 @@ const EditTaskScreen: React.FC = () => {
       }
     }
   }, [task]);
+
+  useEffect(() => {
+    if (success) {
+      setIsSuccessModalVisible(true);
+    }
+  }, [success]);
+
+  useEffect(() => {
+    if (error) {
+      setIsErrorModalVisible(true);
+    }
+  }, [error]);
 
   const handleInputChange = (field: string, value: any) => {
     if (taskDetails) {
@@ -127,7 +166,6 @@ const EditTaskScreen: React.FC = () => {
 
       try {
         await updateTask(taskId, updatedTaskDetails);
-        navigation.navigate('home'); // Reemplaza 'home' con el nombre de tu pantalla principal
       } catch (error) {
         setErrorMessage('Error en la actualización de la tarea.');
       }
@@ -144,7 +182,7 @@ const EditTaskScreen: React.FC = () => {
       const jwtToken = await AsyncStorage.getItem('jwtToken');
       if (jwtToken) {
         try {
-          await fetch('http://18.211.141.106:5002/', {
+          await fetch('https://api-gateway.zapto.org:5000/categories-api/create', {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${jwtToken}`,
@@ -171,7 +209,7 @@ const EditTaskScreen: React.FC = () => {
     try {
       const jwtToken = await AsyncStorage.getItem('jwtToken');
       if (jwtToken) {
-        const response = await fetch('http://18.211.141.106:5001/usernames', {
+        const response = await fetch('https://api-gateway.zapto.org:5000/users-api/usernames', {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${jwtToken}`,
@@ -372,7 +410,7 @@ const EditTaskScreen: React.FC = () => {
     <ScrollView contentContainerStyle={styles.container}>
       <Header />
       <Text style={styles.title}>Editar tarea</Text>
-
+      <Text style={styles.label}>Título de tu tarea</Text>
       <TextInput
         style={styles.input}
         placeholder="Título de tu tarea"
@@ -382,7 +420,7 @@ const EditTaskScreen: React.FC = () => {
       {taskDetails.title.length < 3 || taskDetails.title.length > 50 ? (
         <Text style={styles.errorText}>El título debe tener entre 3 y 50 caracteres.</Text>
       ) : null}
-
+      <Text style={styles.label}>Descripción</Text>
       <TextInput
         style={styles.input}
         placeholder="Descripción"
@@ -392,7 +430,7 @@ const EditTaskScreen: React.FC = () => {
       {taskDetails.description.length < 3 || taskDetails.description.length > 500 ? (
         <Text style={styles.errorText}>La descripción debe tener entre 3 y 500 caracteres.</Text>
       ) : null}
-
+      <Text style={styles.label}>Selecciona una categoría</Text>
       <TouchableOpacity
         style={styles.input}
         onPress={() => setCategoryModalVisible(true)}
@@ -529,7 +567,7 @@ const EditTaskScreen: React.FC = () => {
         <Text style={styles.submitButtonText}>Actualizar</Text>
       </TouchableOpacity>
 
-      {error && <Text style={styles.errorText}>{error}</Text>}
+      {errorMessage && <Text style={styles.errorText}>{errorMessage}</Text>}
       {datePickerVisible && (
         <DateTimePicker
           value={new Date()}
@@ -551,6 +589,48 @@ const EditTaskScreen: React.FC = () => {
       {renderNewCategoryModal()}
       {renderWarningModal()}
       {renderMembersModal()}
+
+      <Modal
+        transparent={true}
+        visible={isSuccessModalVisible}
+        onRequestClose={() => {setIsSuccessModalVisible(false); clearStatus(); }}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalTitle}>¡Éxito!</Text>
+            <Text style={styles.successText}>La tarea se ha actualizado correctamente.</Text>
+            <TouchableOpacity
+              style={styles.modalButton}
+              onPress={() => {
+                setIsSuccessModalVisible(false);
+                clearStatus();
+                navigation.goBack();
+              }}
+            >
+              <Ionicons name="checkmark" size={24} color="white" />
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        transparent={true}
+        visible={isErrorModalVisible}
+        onRequestClose={() => setIsErrorModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalTitle}>Error</Text>
+            <Text style={styles.errorText}>{error}</Text>
+            <TouchableOpacity
+              style={styles.modalButton}
+              onPress={() => setIsErrorModalVisible(false)}
+            >
+              <Ionicons name="checkmark" size={24} color="white" />
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 };
@@ -748,6 +828,11 @@ const styles = StyleSheet.create({
   },
   memberButtonText: {
     color: '#000',
+  },
+  successText: {
+    color: 'green',
+    textAlign: 'center',
+    marginBottom: 16,
   },
 });
 

@@ -53,7 +53,7 @@ const RegisterScreen: React.FC = () => {
     }
 
     try {
-      const response = await fetch('http://18.211.141.106:5001', {
+      const response = await fetch('https://api-gateway.zapto.org:5000/users-api/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

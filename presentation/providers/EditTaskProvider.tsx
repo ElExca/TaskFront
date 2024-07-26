@@ -25,9 +25,11 @@ interface EditTaskContextProps {
   task: Task | null;
   loading: boolean;
   error: string | null;
+  success: boolean;
   fetchTaskDetails: (taskId: string) => void;
   updateTask: (taskId: string, taskData: Task) => Promise<void>;
   setTask: React.Dispatch<React.SetStateAction<Task | null>>;
+  clearStatus: () => void;
 }
 
 const EditTaskContext = createContext<EditTaskContextProps | undefined>(undefined);
@@ -56,6 +58,7 @@ export const EditTaskProvider: React.FC<EditTaskProviderProps> = ({ children }) 
   const [task, setTask] = useState<Task | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<boolean>(false);
 
   const fetchTaskDetails = async (taskId: string) => {
     setLoading(true);
@@ -65,7 +68,7 @@ export const EditTaskProvider: React.FC<EditTaskProviderProps> = ({ children }) 
       console.log('Fetching task details for ID:', taskId);
 
       const jwtToken = await AsyncStorage.getItem('jwtToken');
-      const response = await fetch(`http://18.211.141.106:5003/task/${taskId}`, {
+      const response = await fetch(`https://api-gateway.zapto.org:5000/tasks-api/task/${taskId}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${jwtToken}`,
@@ -107,6 +110,7 @@ export const EditTaskProvider: React.FC<EditTaskProviderProps> = ({ children }) 
   const updateTask = async (taskId: string, taskData: Task) => {
     setLoading(true);
     setError(null);
+    setSuccess(false);
 
     try {
       const jwtToken = await AsyncStorage.getItem('jwtToken');
@@ -124,7 +128,7 @@ export const EditTaskProvider: React.FC<EditTaskProviderProps> = ({ children }) 
 
       console.log('Sending updated task data:', sanitizedTaskData);
 
-      const response = await fetch(`http://18.211.141.106:5003/${taskId}`, {
+      const response = await fetch(`https://api-gateway.zapto.org:5000/tasks-api/edit/${taskId}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${jwtToken}`,
@@ -133,16 +137,18 @@ export const EditTaskProvider: React.FC<EditTaskProviderProps> = ({ children }) 
         body: JSON.stringify(sanitizedTaskData),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        const data = await response.json();
         console.log('Update failed with response:', data);
-        throw new Error(data.message || 'Failed to update task');
+        throw new Error(data.error || 'Failed to update task');
       }
 
       console.log('Updated Task Data:', sanitizedTaskData);
 
       // Actualizar los detalles de la tarea después de actualizarla
       await fetchTaskDetails(taskId);
+      setSuccess(true);
     } catch (error) {
       console.log('Update task error:', (error as Error).message);
       setError((error as Error).message);
@@ -151,8 +157,13 @@ export const EditTaskProvider: React.FC<EditTaskProviderProps> = ({ children }) 
     }
   };
 
+  const clearStatus = () => {
+    setError(null);
+    setSuccess(false);
+  };
+
   return (
-    <EditTaskContext.Provider value={{ task, loading, error, fetchTaskDetails, updateTask, setTask }}>
+    <EditTaskContext.Provider value={{ task, loading, error, success, fetchTaskDetails, updateTask, setTask, clearStatus }}>
       {children}
     </EditTaskContext.Provider>
   );

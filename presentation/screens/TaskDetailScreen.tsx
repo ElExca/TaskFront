@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Modal, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { useFocusEffect } from '@react-navigation/native';
 import Header from '@/presentation/widgets/Header';
 import { useTaskDetail } from '@/presentation/providers/TaskDetailProvider';
 
@@ -15,12 +16,14 @@ const TaskDetailScreen: React.FC = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [subtaskLoading, setSubtaskLoading] = useState(false);
 
-  useEffect(() => {
-    fetchTaskDetails(taskId);
-  }, [taskId]);
+  useFocusEffect(
+    useCallback(() => {
+      fetchTaskDetails(taskId);
+    }, [taskId])
+  );
 
   const handleEditPress = () => {
-    navigation.navigate('editTask', {taskId: taskId});
+    navigation.navigate('editTask', { taskId });
   };
 
   const handleDeletePress = () => {
@@ -58,7 +61,7 @@ const TaskDetailScreen: React.FC = () => {
     if (progress <= 25) return '#F26158'; // Rojo
     if (progress <= 50) return '#F2A05D'; // Naranja
     if (progress <= 75) return '#F4EB70'; // Amarillo
-    return '#A7D3A6'; 
+    return '#A7D3A6';
   };
 
   if (loading) {
