@@ -33,7 +33,7 @@ const PerformanceChart: React.FC<PerformanceChartProps> = ({ completed, inProgre
             size={28}
             color={trend === "positive" ? "green" : "red"}
           />
-          <Text style={styles.completionRateText}>{(completionRate * 100).toFixed(1)}%</Text>
+          <Text style={styles.completionRateText}>{(completionRate).toFixed(1)}%</Text>
         </View>
       </View>
       <Svg width={screenWidth - 32} height={200} viewBox="0 0 200 200">

@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, BackHandler, Alert } from 'react-native';
 import { useNavigation, NavigationProp, useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -22,6 +22,7 @@ type RootStackParamList = {
   createtask: undefined;
   categoryTasks: { category: string };
   alltasks: undefined;
+  home: undefined;
   "(tabs)": undefined;
   "+not-found": undefined;
   taskDetail: undefined;
@@ -46,6 +47,20 @@ const HomeScreen: React.FC = () => {
   useEffect(() => {
     getUsername();
   }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        // Previene salir de la pantalla de inicio con el botón de retroceso
+        return true;
+      };
+
+      BackHandler.addEventListener('hardwareBackPress', onBackPress);
+      
+      // Cleanup event listener on screen unmount
+      return () => BackHandler.removeEventListener('hardwareBackPress', onBackPress);
+    }, [])
+  );
 
   useFocusEffect(
     useCallback(() => {

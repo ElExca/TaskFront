@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, FlatList, Modal } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Modal, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
 import { useNavigation, NavigationProp } from '@react-navigation/native';
@@ -13,6 +13,8 @@ interface Notification {
 }
 
 type RootStackParamList = {
+  home: undefined;
+  login: undefined;
   taskDetail: { taskId: string };
 };
 
@@ -22,6 +24,7 @@ const Header: React.FC = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [modalMessage, setModalMessage] = useState('');
+  const [loading, setLoading] = useState(false); // Estado para manejar el indicador de carga
   const translateY = useSharedValue(-50);
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
 
@@ -40,6 +43,7 @@ const Header: React.FC = () => {
   const toggleNotifications = async () => {
     setNotificationsVisible(!notificationsVisible);
     if (!notificationsVisible) {
+      setLoading(true); // Muestra el indicador de carga
       try {
         const jwtToken = await AsyncStorage.getItem('jwtToken');
         if (jwtToken) {
@@ -67,6 +71,8 @@ const Header: React.FC = () => {
       } catch (error) {
         console.error('Error al recuperar el token', error);
         setNotifications([]);
+      } finally {
+        setLoading(false); // Oculta el indicador de carga
       }
     }
   };
@@ -107,15 +113,41 @@ const Header: React.FC = () => {
     }
   };
 
-  const renderNotificationItem = ({ item }: { item: Notification }) => (
-    <View key={item._id} style={styles.notificationItem}>
-      <Text style={styles.notificationText}>{item.message}</Text>
+  const handleLogout = async () => {
+    try {
+      const jwtToken = await AsyncStorage.getItem('jwtToken');
+      if (jwtToken) {
+        const response = await fetch('http://18.211.141.106:5001/logout', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${jwtToken}`,
+          },
+        });
+
+        if (response.ok) {
+          await AsyncStorage.removeItem('jwtToken');
+          navigation.navigate('login');
+        } else {
+          setModalMessage('Error al cerrar sesión.');
+          setModalVisible(true);
+        }
+      }
+    } catch (error) {
+      console.error('Error al cerrar sesión', error);
+      setModalMessage('Error al cerrar sesión.');
+      setModalVisible(true);
+    }
+  };
+
+  const renderNotificationItem = (notification: Notification) => (
+    <View key={notification._id} style={styles.notificationItem}>
+      <Text style={styles.notificationText}>{notification.message}</Text>
       <View style={styles.detailsContainer}>
         <View style={styles.progressBarContainer}>
           <View style={styles.progressBar}></View>
         </View>
-        {item.task_id !== "0000000" && (
-          <TouchableOpacity onPress={() => handleTaskPress(item.task_id)}>
+        {notification.task_id !== "0000000" && (
+          <TouchableOpacity onPress={() => handleTaskPress(notification.task_id)}>
             <Text style={styles.detailsText}>Ver detalles</Text>
           </TouchableOpacity>
         )}
@@ -135,11 +167,11 @@ const Header: React.FC = () => {
       </Animated.View>
       {menuVisible && (
         <View style={styles.menu}>
-          <TouchableOpacity style={styles.menuItem}>
-            <Ionicons name="list" size={24} color="#4A4A4A" />
-            <Text style={styles.menuItemText}>Menu</Text>
+          <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('home')}>
+            <Ionicons name="home" size={24} color="#4A4A4A" />
+            <Text style={styles.menuItemText}>Home</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity style={styles.menuItem} onPress={handleLogout}>
             <Ionicons name="log-out" size={24} color="#4A4A4A" />
             <Text style={styles.menuItemText}>Cerrar sesión</Text>
           </TouchableOpacity>
@@ -148,12 +180,13 @@ const Header: React.FC = () => {
       {notificationsVisible && (
         <View style={styles.notifications}>
           <Text style={styles.notificationsTitle}>Recordatorios</Text>
-          <FlatList
-            data={notifications}
-            keyExtractor={(item) => item._id}
-            renderItem={renderNotificationItem}
-            ListEmptyComponent={<Text>No hay notificaciones</Text>}
-          />
+          {loading ? (
+            <ActivityIndicator size="large" color="#2A9D8F" style={styles.loadingIndicator} />
+          ) : (
+            <ScrollView style={styles.modalScrollView}>
+              {notifications.map(renderNotificationItem)}
+            </ScrollView>
+          )}
         </View>
       )}
       <Modal
@@ -254,8 +287,8 @@ const styles = StyleSheet.create({
   },
   progressBar: {
     height: '100%',
-    width: '60%', // Ejemplo, ajusta esto según el progreso real
-    backgroundColor: '#F4EB70', // Cambia el color según el estado de la tarea
+    width: '60%', 
+    backgroundColor: '#F4EB70', 
   },
   detailsText: {
     fontSize: 14,
@@ -268,28 +301,30 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.5)',
   },
   modalContainer: {
-    backgroundColor: 'white',
+    width: 300,
     padding: 16,
+    backgroundColor: 'white',
     borderRadius: 8,
     alignItems: 'center',
-    width: 300,
   },
   modalText: {
     fontSize: 16,
-    color: '#4A4A4A',
-    marginBottom: 16,
-    textAlign: 'center',
+    marginBottom: 12,
   },
   modalButton: {
     backgroundColor: '#2A9D8F',
-    padding: 8,
+    padding: 12,
     borderRadius: 8,
-    alignItems: 'center',
-    width: '100%',
   },
   modalButtonText: {
     color: 'white',
-    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  modalScrollView: {
+    maxHeight: 400, 
+  },
+  loadingIndicator: {
+    marginTop: 20,
   },
 });
 
